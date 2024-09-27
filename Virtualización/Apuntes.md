@@ -181,6 +181,8 @@ Si no que será el **NOMBRE** de dicha máquina.
 
 # Clonación de máquinas
 
+**De esta manera no se hara**
+
 Hace una copia de la configuración XML de la maquina de origen y sus imagenes de disco, y realiza ajustes en las configuraciones para asegurar la unicidad de la nueva máquina.
 
 Para esto usaremos el **VIRT-CLONE** con el siguiente comando:
