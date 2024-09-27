@@ -175,3 +175,29 @@ virsh -c qemu:///system domblklist prueba1
 
 virsh -c qemu:///system domrename nombre_viejo nombre_nuevo
 
+Con esto lo que se hace es modificar el nombre de la máquina, pero no su dominio, es decir, no lo que no saldra una vez estemos por terminal: **root@linux-andy:~**
+
+Si no que será el **NOMBRE** de dicha máquina.
+
+# Clonación de máquinas
+
+Hace una copia de la configuración XML de la maquina de origen y sus imagenes de disco, y realiza ajustes en las configuraciones para asegurar la unicidad de la nueva máquina.
+
+Para esto usaremos el **VIRT-CLONE** con el siguiente comando:
+
+virt-clone --connect=qemu:///system --original nombre_viejo --name nombre_nuevo --auto-clone
+
+* --auto-clone este parametro nos dara lo siguiente **nueva direccion MAC** y **nueva ruta del disco para el almacenamiento**, esto para evitar sobreescribr el disco existente.
+
+Cambiar el nombre del host tendremos que entrar en el fichero /etc/hostname 
+
+**Esta manera no se va a hacer** , se hara a partir de lo siguiente:
+
+
+# Plantillas de máquinas
+
+
+- ## Clonación completa a partir de una plantilla
+- ## Clonación enlazada a partir de una plantilla
+
+
