@@ -198,8 +198,109 @@ Cambiar el nombre del host tendremos que entrar en el fichero /etc/hostname
 
 # Plantillas de máquinas
 
+## Creación de plantillas
+
+Para esto tendremos que tener una máuina completamente opertaiva, donde tengamso todo el software necesario, y a partir de esta crearemos la plantilla.
+
+En segundo lugar, vamos a generalizar la imagen, es decir, vamso a eliminar toda la iinformacion que deberia ser unica en un máquina. De tal forma, que las máquinas clonadas, regeneren esta informacion de manera unica.
+
+Para ello en nuestra maquina Linux, la anfitriona tendremos que usar el siguiente paquete para esto:
+
+''' apt-get install libguestfs-tools '''
+
+Como en nuestro caso vamos a indicar que vamos a trabajar con una máquina virtual. usaremos el parametro -d
+
+Nos tiene que salir esto:
+
+'''
+madandy@toyota-hilux:~$ sudo virt-sysprep -d plantilla-debian --hostname autentica-plantilla
+[   0.0] Examining the guest ...
+'''
+
+virt-sysprep tienes muchas opciones de configuración, hemos usado el parámetro -hostname para cambiar el nombre de la máquina de la plantilla.
+
+En último lugar, tenemos que evitar ejecutar está máquina de nuevo, ya que la generalización que hemos hecho se perdería. Para conseguirlo vamos a configurar la imagen original de solo lectura, de esta manera al intentar ejecutar la plantilla nos dará un error. Para ello como superusuario:
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ sudo chmod -w debian.qcow2
+
+cambir el nombre de de la mauina para recordar que es una plantilla
+
+'''
+virsh -c qemu:///system domrename prueba1 plantilla-prueba1
+Domain successfully renamed
+
+'''
+
+Si intentamos arrancar la maquina esta nos dara el siguiente error:
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ virsh -c qemu:///system start plantilla-debian 
+error: Failed to start domain 'plantilla-debian'
+error: error interno: process exited while connecting to monitor: 2024-09-28T22:12:05.835860Z qemu-system-x86_64: -blockdev {"node-name":"libvirt-2-format","read-only":false,"discard":"unmap","driver":"qcow2","file":"libvirt-2-storage","backing":null}: Could not open '/var/lib/libvirt/images/debian.qcow2': Permission denied
+
+
+- ## Clonación enlazada a partir de una plantilla
+
+Para este tendremos que hacer dos pasos, que seran los siguientes:
+
+1. Creación del nuevo volumen a partir de la imagen base de la plantilla 
+
+2. Creación de la nueva máquina usando virt-install, virt-manager o virt-clone
+
+
+- ### Creación de imágenes de disco con backing store
+
+Tenemos que tener en cuenta que vamso a indicar el nuevo volumen igual al de la imagen base.
+
+Esto se puede ver de la  siguiente manera:
+
+'''
+madandy@toyota-hilux:/var/lib/libvirt/images$ virsh -c qemu:///system domblkinfo plantilla-debian vda --human
+Capacidad:      10,000 GiB
+Ubicación:     2,679 GiB
+Físico:        10,002 GiB
+'''
+
+Para crear la nueva imagen basada en la imagen base de la plantilla,**ESTO SE HARA PARA CADA VEZ QUE QUERAMOS HACER UNA MAQUINA** lo vamos a crear el volumen con virsh:
+
+virsh -c qemu:///system vol-create-as default nombre_volume.qcow2 10G --format qcow2 --backing-vol debian.qcow2 --backing-vol-format qcow2 
+Se ha creado el volumen nombre_volume.qcow2
+
+
+Miramos la info por el XML:
+
+
+virsh -c qemu:///system vol-dumpxml nombre_volume.qcow2 default
+....
+ <backingStore>
+    <path>/var/lib/libvirt/images/debian.qcow2</path>
+    <format type='qcow2'/>
+    <permissions>
+.....
+
+
+Y ahora si, vamso a crear una nueva máquina a partir de la imagen con backing store con virt-install, pero sin indicar el medio de instalacion
+
+
+madandy@toyota-hilux:~$ virt-install --connect qemu:///system \
+                         --virt-type kvm \
+                         --name nueva_prueba \
+                         --os-variant debian11 \
+                         --disk path=/var/lib/libvirt/images/nombre_volume.qcow2 \                                      
+                         --memory 1024 \
+                         --vcpus 1 \
+                         --import
+
+Empezando la instalación...
+Creando dominio...                                          |    0 B  00:00     
+Running graphical console command: virt-viewer --connect qemu:///system --wait nueva_prueba
+
+
 
 - ## Clonación completa a partir de una plantilla
-- ## Clonación enlazada a partir de una plantilla
+
+
+
+
+
 
 
