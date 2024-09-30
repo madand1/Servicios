@@ -63,13 +63,14 @@ virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2
 - Para un volumen existente en el pool
 
 ```virt-install --connect qemu:///system \
-			 --virt-type kvm \
-			 --name nombre_maquina \
-			 --cdrom ruta_de_la_iso \
-             --disk pool=mi_pool,vol=mi_volumen \
-			 --os-variant debian11 \
-			  --memory 1024 \
-			 --vcpus 1
+    				--virt-type kvm \
+    				--name debian \
+    				--cdrom ~/ISOS/debian-12.1.0-amd64-netinst.iso \
+    				--disk vol=nombre_poolñ/volumen_que_queramos \
+    				--os-variant debian11 \
+				--memory 1024 \
+    				--vcpus 1
+
 ```
 
 - Crear un nuevo disco o volumen en el pool de almacenamiento
