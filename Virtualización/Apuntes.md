@@ -62,7 +62,8 @@ virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2
 ## Estructura usando un pool distinto 
 - Para un volumen existente en el pool
 
-```virt-install --connect qemu:///system \
+```
+virt-install --connect qemu:///system \
     				--virt-type kvm \
     				--name debian \
     				--cdrom ~/ISOS/debian-12.1.0-amd64-netinst.iso \
