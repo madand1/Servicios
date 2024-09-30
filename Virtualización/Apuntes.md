@@ -17,6 +17,7 @@ Para esto lo que se hace es usar el comando:
 
 ## Estructura de creación de una máquina
 
+```
 virt-install --connect qemu:///system \
 			 --virt-type kvm \
 			 --name nombre_maquina \
@@ -25,6 +26,7 @@ virt-install --connect qemu:///system \
 			 --disk size=10 \
 			 --memory 1024 \
 			 --vcpus 1
+```
 
 Con esto se arranca lo que será la instalación de nuestra máquina creada.
 
@@ -60,7 +62,7 @@ virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2
 ## Estructura usando un pool distinto 
 - Para un volumen existente en el pool
 
-'''virt-install --connect qemu:///system \
+```virt-install --connect qemu:///system \
 			 --virt-type kvm \
 			 --name nombre_maquina \
 			 --cdrom ruta_de_la_iso \
@@ -68,11 +70,12 @@ virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2
 			 --os-variant debian11 \
 			  --memory 1024 \
 			 --vcpus 1
-'''
+```
 
 - Crear un nuevo disco o volumen en el pool de almacenamiento
 
-''' virt-install --connect qemu:///system \
+```
+ virt-install --connect qemu:///system \
     --virt-type kvm \
     --name nombre_maquina \
     --cdrom ruta_de_la_iso \
@@ -80,7 +83,8 @@ virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2
     --os-variant debian11 \
     --memory 1024 \
     --vcpus 1
-'''
+```
+
 - Parar pool 
 virsh -c qemu:///system pool-destroy nombre_maquina
 
