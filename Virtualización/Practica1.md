@@ -55,6 +55,9 @@ scp .ssh/jose.pub debian@192.168.122.152:/home/debian/.ssh
 scp .ssh/rafa.pub debian@192.168.122.152:/home/debian/.ssh
 
 ```
+>[!CAUTION] 
+> Esto es la vm virtual
+
 
 ```
 cat /home/debian/.ssh/andy.pub >> /home/debian/.ssh/authorized_keys
