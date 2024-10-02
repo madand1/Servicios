@@ -1,320 +1,238 @@
-# Instalación de QEMU/KVM + libvirt 
+# Práctica 1
 
-Para trabajar con el sistema de virtualizacion QEMU/KVM + libvirt, debemos instalar los siguienetes paquetes:
+## Ejercicio 1
 
-```apt install qemu-system libvirt-clients libvirt-daemon-system```
-
-# Conexión a QEMU/KVM
-
-- Listar las máquinas que hemos creado
-
-```virsh -c qemu:///system list --all```
-
-# Creación de máquinas virtulaes desde la línea de comandos
-
-Para esto lo que se hace es usar el comando:
-```virt-install```
-
-## Estructura de creación de una máquina
+### Creación de la maquina:
 
 ```
-virt-install --connect qemu:///system \
-			 --virt-type kvm \
-			 --name nombre_maquina \
-			 --cdrom ruta_de_la_iso \
-			 --os-variant debian11 \
-			 --disk size=10 \
-			 --memory 1024 \
-			 --vcpus 1
-```
-
-Con esto se arranca lo que será la instalación de nuestra máquina creada.
-
-![virt-install](img/image.png)
-
-# Pool de almacenamiento
-
-- Ver los volumenes que hay 
-
-```virsh -c qemu:///system pool-list```
-
-- Veamos el volumen que se ha creado en el pool ( de manera normal se hara en **default**)
-
-```virsh -c qemu:///system vol-list default```
-
-- Crear un pool de almacenamiento
-
-```virsh pool-define-as [nombre_del_pool] dir --target [nombre_que_den]```
-
-- Crear el direccion indicado
-
-```virsh -c qemu:///system pool-build nombre_del_pool```
-
-- Iniciar y activar el pool de almacenamiento
-
-```virsh pool-start nombre_del_pool```
-```virsh pool-autostart nombre_del_pool```
-
-- crear el volumen dentro del pool 
-
-```virsh vol-create-as mi_pool [nombre_del_volumen] [tamaño] --format qcow2```
-
-## Estructura usando un pool distinto 
-- Para un volumen existente en el pool
+alejandro$ virt-install --connect qemu:///system \
+--virt-type kvm \
+--name practica1 \
+--cdrom ~/iso/debian-12.7.0-amd64-netinst.iso \
+--os-variant debian11 \
+--disk size=3 \
+--memory 1024 \
+--vcpus 1
+Empezando la instalación...
 
 ```
-virt-install --connect qemu:///system \
-    				--virt-type kvm \
-    				--name debian \
-    				--cdrom ~/ISOS/debian-12.1.0-amd64-netinst.iso \
-    				--disk vol=nombre_poolñ/volumen_que_queramos \
-    				--os-variant debian11 \
-				--memory 1024 \
-    				--vcpus 1
-```
-
-- Crear un nuevo disco o volumen en el pool de almacenamiento
+### Entramos como root, y hacemos un update, y la instalación.
 
 ```
- virt-install --connect qemu:///system \
-    --virt-type kvm \
-    --name nombre_maquina \
-    --cdrom ruta_de_la_iso \
-    --disk pool=mi_pool,size=10,format=qcow2 \
-    --os-variant debian11 \
-    --memory 1024 \
-    --vcpus 1
+root@debian:~# apt update
+root@debian:~# apt install sudo
+root@debian:~# usermod -aG sudo debian
+root@debian:~# visudo
+
 ```
 
-- Parar pool 
-```virsh -c qemu:///system pool-destroy nombre_maquina```
-
-- Borrar directorio 
-```virsh -c qemu:///system pool-delete nombre_maquina```
-
-- Eliminar
-
-```virsh -c qemu:///system pool-undefine nombre_maquina```
-
-- Detalles del pool 
-
-```virsh -c qemu:///system pool-info nombre_pool```
-
-- Borrar un volumen 
-
-```virsh -c qemu:///system vol-delete <nombre-del-volumen> --pool <nombre-del-pool>```
-
-- Detener un pool
-
-```virsh -c qemu:///system pool-destroy <nombre-del-pool>```
-
-- Eliminar la definición del pool 
-
-```virsh -c qemu:///system pool-undefine <nombre-del-pool>```
-
-- Borrar archivos asociados al pool
-
-```virsh -c qemu:///system pool-undefine <nombre-del-pool>```
-
-- Refrescar pool 
-
-```virsh -c qemu:///system pool-refresh <nombre-del-pool>```
-
-
-# Gestión de las máquinas virtuales con virsh
-
-En este apartado lo que hare sera poner los comandos de gestión de máquinas virtuales por comandos de terminal:
-
-- Listar máquinas:
-
-```virsh -c qemu:///system list --all```
-
-- Arrnacar maquina:
-
-```virsh -c qemu:///system start nombre_maquina```
-
-- Poner el auto arranque, por si se usa demasiado:
-
-```virsh -c qemu:///system autostart prueba1```
-
-- Apagar de forma adecuada:
-
-```virsh -c qemu:///system shutdown prueba1```
-
-- Reiniciar la maquina 
-
-```virsh -c qemu:///system reboot prueba1```
-
-- Forzar el apagado
-
-```virsh -c qemu:///system destroy prueba1```
-
-- Pausar la ejecucion de la máquina
-
-```virsh -c qemu:///system suspend prueba1```
-
-- Continuar con la ejecución de la máquina
-
-```virsh -c qemu:///system resume prueba1```
-
-- Eliminar una maquina que este **PARADA** eliminando los volumenes
-
-```virsh -c qemu:///system undefine --remove-all-storage prueba1```
-
-## Obtener informacion de la máquina virtual
-
-- Obtener información de la máquina
-
-```virsh -c qemu:///system dominfo prueba1```
-
-- Obtener direccion IP de la interfaz de la red:
-
-```virsh -c qemu:///system domifaddr prueba1```
-
-- Obtener los discos que tiene la máquina
-
-```virsh -c qemu:///system domblklist prueba1```
-
-## Modificación la máquina 
-
-- Modificar el nombre de una máquina virtual
-
-```virsh -c qemu:///system domrename nombre_viejo nombre_nuevo```
-
-Con esto lo que se hace es modificar el nombre de la máquina, pero no su dominio, es decir, no lo que no saldra una vez estemos por terminal: **root@linux-andy:~**
-
-Si no que será el **NOMBRE** de dicha máquina.
-
-# Clonación de máquinas
-
-> [!CAUTION]
-> De esta manera no se hara
-
-Hace una copia de la configuración XML de la maquina de origen y sus imagenes de disco, y realiza ajustes en las configuraciones para asegurar la unicidad de la nueva máquina.
-
-Para esto usaremos el **VIRT-CLONE** con el siguiente comando:
-
-```virt-clone --connect=qemu:///system --original nombre_viejo --name nombre_nuevo --auto-clone```
-
-* --auto-clone este parametro nos dara lo siguiente **nueva direccion MAC** y **nueva ruta del disco para el almacenamiento**, esto para evitar sobreescribr el disco existente.
-
-Cambiar el nombre del host tendremos que entrar en el fichero **/etc/hostname**
-
-**Esta manera no se va a hacer** , se hara a partir de lo siguiente:
-
-> [!IMPORTANT]  
-> Esto se hara para no acaparar todos los recursos
-
-# Plantillas de máquinas
-
-## Creación de plantillas
-
-Para esto tendremos que tener una máuina completamente opertaiva, donde tengamso todo el software necesario, y a partir de esta crearemos la plantilla.
-
-En segundo lugar, vamos a generalizar la imagen, es decir, vamso a eliminar toda la iinformacion que deberia ser unica en un máquina. De tal forma, que las máquinas clonadas, regeneren esta informacion de manera unica.
-
-Para ello en nuestra maquina Linux, la anfitriona tendremos que usar el siguiente paquete para esto:
-
-```apt-get install libguestfs-tools```
-
-Como en nuestro caso vamos a indicar que vamos a trabajar con una máquina virtual. usaremos el parametro -d
-
-Nos tiene que salir esto:
+### Entramos en el archivo y editamos la siguiente linea, y la cambiamos por esta:
 
 ```
-madandy@toyota-hilux:~$ sudo virt-sysprep -d plantilla-debian --hostname autentica-plantilla
+sudo ALL=(ALL:ALL) ALL > sudo ALL=(ALL:ALL) NOPASSWD: ALL
+
+```
+### Para copiar la clave publica de mi máquina fisica y la del profesor, en el usuario debin de la máquina virtual, crearenos el directorio .ssh y el fichero autohorized_keys, en el que pegaremos ambas claves.
+
+```
+debian@debian:~$ mkdir -p ~/.ssh
+debian@debian:~$ chmod 700 ~/.ssh
+debian@debian:~$ nano ~/.ssh/authorized_keys
+```
+### Lo pasamos a lo que sera al archivo:
+
+```
+touch /home/debian/.ssh/authorized_keys
+```
+
+>[!WARNING]
+> Esto es mi máquina
+
+```
+scp .ssh/andy.pub debian@192.168.122.152:/home/debian/.ssh
+scp .ssh/jose.pub debian@192.168.122.152:/home/debian/.ssh
+scp .ssh/rafa.pub debian@192.168.122.152:/home/debian/.ssh
+
+```
+
+```
+cat /home/debian/.ssh/andy.pub >> /home/debian/.ssh/authorized_keys
+cat /home/debian/.ssh/jose.pub >> /home/debian/.ssh/authorized_keys
+cat /home/debian/.ssh/rafa.pub >> /home/debian/.ssh/authorized_keys
+```
+### Comprobación de la conexión, sin contraseña:
+
+
+```
+madandy@toyota-hilux:~$ ssh debian@192.168.122.40
+Linux debian 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Wed Oct  2 09:02:20 2024
+debian@debian:~$ 
+
+```
+### Creación de la plantilla
+
+```
+madandy@toyota-hilux:~$ sudo virt-sysprep -d practica1 --hostname plantilla-cliente
+[sudo] contraseña para madandy: 
 [   0.0] Examining the guest ...
-```
-
-*virt-sysprep* tienes muchas opciones de configuración, hemos usado el parámetro -hostname para cambiar el nombre de la máquina de la plantilla.
-
-En último lugar, tenemos que evitar ejecutar está máquina de nuevo, ya que la generalización que hemos hecho se perdería. Para conseguirlo vamos a configurar la imagen original de solo lectura, de esta manera al intentar ejecutar la plantilla nos dará un error. Para ello como superusuario:
-
-```
-madandy@toyota-hilux:/var/lib/libvirt/images$ sudo chmod -w debian.qcow2
-```
-
-Cambiar el nombre de de la mauina para recordar que es una plantilla
+[   5.5] Performing "abrt-data" ...
+[   5.5] Performing "backup-files" ...
+[   5.7] Performing "bash-history" ...
+[   5.7] Performing "blkid-tab" ...
+[   5.7] Performing "crash-data" ...
+[   5.7] Performing "cron-spool" ...
+[   5.8] Performing "dhcp-client-state" ...
+[   5.8] Performing "dhcp-server-state" ...
+[   5.8] Performing "dovecot-.....
 
 ```
-virsh -c qemu:///system domrename prueba1 plantilla-prueba1
-Domain successfully renamed
-```
 
-Si intentamos arrancar la maquina esta nos dara el siguiente error:
+### Por ultimo le quitamos los permisos al archivo *qcow2* para que solo sea un archivo de solo lectura, y le cambiamos el nomnre a la máquina que ahora hemos convertido en plantilla.
 
 ```
-madandy@toyota-hilux:/var/lib/libvirt/images$ virsh -c qemu:///system start plantilla-debian 
-error: Failed to start domain 'plantilla-debian'
-error: error interno: process exited while connecting to monitor: 2024-09-28T22:12:05.835860Z qemu-system-x86_64: -blockdev {"node-name":"libvirt-2-format","read-only":false,"discard":"unmap","driver":"qcow2","file":"libvirt-2-storage","backing":null}: Could not open '/var/lib/libvirt/images/debian.qcow2': Permission denied
+madandy@toyota-hilux:~$ cd /var/lib/libvirt/images/
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ sudo ls
+practica1.qcow2
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ sudo chmod -w practica1.qcow2
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ virsh -c qemu:///system domrename practica1 plantilla-clienteDomain successfully renamed
 ```
 
-- ## Clonación enlazada a partir de una plantilla
+## Ejercicio 2
 
-Para este tendremos que hacer dos pasos, que seran los siguientes:
 
-1. Creación del nuevo volumen a partir de la imagen base de la plantilla 
+### Comprobación de que estan los permisos quitados:
 
+```
+madandy@toyota-hilux:~$ virsh -c qemu:///system start plantilla-cliente 
+error: Failed to start domain 'plantilla-cliente'
+error: error interno: process exited while connecting to monitor: 2024-10-02T08:10:24.396343Z qemu-system-x86_64: -blockdev {"node-name":"libvirt-2-format","read-only":false,"discard":"unmap","driver":"qcow2","file":"libvirt-2-storage","backing":null}: Could not open '/var/lib/libvirt/images/practica1.qcow2': Permission denied
+```
+
+### Comprobacion de lo que ocupa:
+
+```
+madandy@toyota-hilux:~$ cd /var/lib/libvirt/images
+
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ sudo ls
+practica1.qcow2
+
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ du -h practica1.qcow2
+2,0G	practica1.qcow2
+
+```
+
+### Reducción del volumen y comprobación:
+
+```
+madandy@toyota-hilux:~$ sudo virt-sparsify /var/lib/libvirt/images/practica1.qcow2 /var/lib/libvirt/images/practica1-reducida.qcow2
+[   0.0] Create overlay file in /tmp to protect source disk
+[   0.0] Examine source disk
+[   3.2] Fill free space in /dev/sda1 with zero
+[   4.2] Clearing Linux swap on /dev/sda5
+[   5.1] Copy to destination and make sparse
+[   8.1] Sparsify operation completed with no errors.
+virt-sparsify: Before deleting the old disk, carefully check that the 
+target disk boots and works correctly.
+
+madandy@toyota-hilux:~$ cd /var/lib/libvirt/images
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ du -h practica1.qcow2
+2,0G	practica1.qcow2
+
+madandy@toyota-hilux:/var/lib/libvirt/images$ du -h practica1-reducida.qcow2
+1,4G	practica1-reducida.qcow2
+
+```
+
+# CLONACION ENLAZADA DE UNA PLANTILLA
+
+- La imagen de la MV clonada utiliza la imagen de la plantilla como imagen base
+(backing store) en modo de sóolo lectura.
+- La imagen de la nueva MV sólo guarda los cambios del sistema de archivo.
+Requiere menos espacio en disco, pero no puede ejecutarse sin acceso a la
+imagen de plantilla base.
+* Mecanismo:
+1. Creación del nuevo volumen a a partir de la imagen base de la plantilla (backing
+store).
 2. Creación de la nueva máquina usando virt-install, virt-manager o virt-clone
 
+* Para no complicar la creación de volúmenes con backing store vamos a indicar
+el tamaño del nuevo volumen igual al de la imagen base.
+* Si es distinto (más grande) tendríamos que redimensionar el sistema de
+archivos.
 
-- ### Creación de imágenes de disco con backing store
+## *Pasos:*
 
-Tenemos que tener en cuenta que vamso a indicar el nuevo volumen igual al de la imagen base.
+- Comprobar el tamaño de la imagen de la plantilla:
 
-Esto se puede ver de la  siguiente manera:
+```virsh -c qemu:///system domblkinfo plantilla-cliente vda --human```
 
-```
-madandy@toyota-hilux:/var/lib/libvirt/images$ virsh -c qemu:///system domblkinfo plantilla-debian vda --human
-Capacidad:      10,000 GiB
-Ubicación:     2,679 GiB
-Físico:        10,002 GiB
-```
+### Creación de los clientes
 
-Para crear la nueva imagen basada en la imagen base de la plantilla,**ESTO SE HARA PARA CADA VEZ QUE QUERAMOS HACER UNA MAQUINA** lo vamos a crear el volumen con virsh:
+#### Cliente 1
 
-```
-virsh -c qemu:///system vol-create-as default nombre_volume.qcow2 10G --format qcow2 --backing-vol debian.qcow2 --backing-vol-format qcow2 
-Se ha creado el volumen nombre_volume.qcow2
-```
-
-Miramos la info por el XML:
+- Creamos la nueva imagen usando _virsh_ :
 
 ```
-virsh -c qemu:///system vol-dumpxml nombre_volume.qcow2 default
+virsh -c qemu:///system vol-create-as default vol_clon_plantilla_cliente1.qcow2 3G \
+                                    --format qcow2 \
+                                    --backing-vol practica1.qcow2 \
+                                    --backing-vol-format qcow2
 
-....
- <backingStore>
-    <path>/var/lib/libvirt/images/debian.qcow2</path>
-    <format type='qcow2'/>
-    <permissions>
+Se ha creado el volumen vol_clon_plantilla_cliente1.qcow2
+```
+- Obtenemos informacion de la nueva imagen usando _virsh_:
 
-....
+```virsh -c qemu:///system vol-dumpxml vol_clon_plantilla_cliente1.qcow2 default```
+
+- Creación de la nueva *MÁQUINA VIRTUAL*
+
+```
+virt-clone --connect=qemu:///system \
+                --original plantilla-cliente \
+                --name cliente1 \
+                --file /var/lib/libvirt/images/vol_clon_plantilla_cliente1.qcow2 \
+                --preserve-data
 ```
 
-Y ahora si, vamso a crear una nueva máquina a partir de la imagen con backing store con virt-install, pero sin indicar el medio de instalacion
+### Cliente 2
+
+- Creamos la nueva imagen usando _virsh_ :
 
 ```
-madandy@toyota-hilux:~$ virt-install --connect qemu:///system \
-                         --virt-type kvm \
-                         --name nueva_prueba \
-                         --os-variant debian11 \
-                         --disk path=/var/lib/libvirt/images/nombre_volume.qcow2 \                                      
-                         --memory 1024 \
-                         --vcpus 1 \
-                         --import
+virsh -c qemu:///system vol-create-as default vol_clon_plantilla_cliente2.qcow2 3G \
+                                    --format qcow2 \
+                                    --backing-vol practica1.qcow2 \
+                                    --backing-vol-format qcow2
 
-Empezando la instalación...
-Creando dominio...                                          |    0 B  00:00     
-Running graphical console command: virt-viewer --connect qemu:///system --wait nueva_prueba
+Se ha creado el volumen vol_clon_plantilla_cliente2.qcow2
 ```
+- Obtenemos informacion de la nueva imagen usando _virsh_:
 
+```virsh -c qemu:///system vol-dumpxml vol_clon_plantilla_cliente2.qcow2 default```
 
-- ## Clonación completa a partir de una plantilla
+- Creación de la nueva *MÁQUINA VIRTUAL*
 
-
-
-
+```
+virt-clone --connect=qemu:///system \
+                --original plantilla-cliente \
+                --name cliente2 \
+                --file /var/lib/libvirt/images/vol_clon_plantilla_cliente2.qcow2 \
+                --preserve-data
+```
 
 
 
