@@ -40,7 +40,8 @@ debian@debian:~$ chmod 700 ~/.ssh
 debian@debian:~$ nano ~/.ssh/authorized_keys
 ```
 ### Lo pasamos a lo que sera al archivo:
-
+>[!CAUTION] 
+> Esto es la vm virtual
 ```
 touch /home/debian/.ssh/authorized_keys
 ```
