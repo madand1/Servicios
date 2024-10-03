@@ -5,7 +5,7 @@
 ### Creación de la maquina:
 
 ```
-alejandro$ virt-install --connect qemu:///system \
+madadny@toyota-hylux: virt-install --connect qemu:///system \
 --virt-type kvm \
 --name practica1 \
 --cdrom ~/iso/debian-12.7.0-amd64-netinst.iso \
