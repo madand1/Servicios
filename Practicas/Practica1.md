@@ -341,3 +341,278 @@ permitted by applicable law.
 Last login: Thu Oct  3 10:19:01 2024 from 172.22.7.202
 
 ```
+- Configuramos la red estatica, de la siguiente manera:
+
+1. Vemos las interfaces con ```ip a```, vemos la que no esta levantada, que en este caso sera _enp1s0_
+
+2. Para poner la interfaz estatica, editaremos el siguiente archivo:
+
+```sudo nano /etc/network/interfaces```
+
+3. Una vez que lo hemos editado tendremos que levantar la interfaz, pero como esta no estaba levantada, si no que estaba *down* pues metemos el siguiente comando:
+
+ ```user@router-andy:~$ sudo systemctl restart networking```
+
+4. Comprobamos la ip, con el comando *ip a*
+
+```
+user@router-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:8e:63:25 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.1/24 brd 192.168.200.255 scope global enp1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe8e:6325/64 scope link 
+       valid_lft forever preferred_lft forever
+3: enp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:21:45:2c brd ff:ff:ff:ff:ff:ff
+    inet 172.22.7.27/16 brd 172.22.255.255 scope global dynamic enp2s0
+       valid_lft 86100sec preferred_lft 86100sec
+    inet6 fe80::5054:ff:fe21:452c/64 scope link 
+       valid_lft forever preferred_lft forever
+
+
+```
+5. Poner en auto arranque:
+
+```
+madandy@toyota-hilux:~$ sudo virsh -c qemu:///system autostart router-andy 
+Domain 'router-andy' marked as autostarted
+```
+
+### Creación del servidorNAS
+
+```
+qemu-img create -f qcow2 /var/lib/libvirt/images/servidorNAS.qcow2 15G
+```
+
+```
+virt-install --connect qemu:///system 
+                        --virt-type kvm \
+                        --name servidorNAS \ 
+                        --cdrom ~/iso/alpine-standard-3.20.3-x86_64.iso \
+                        --os-variant alpinelinux3.17 \
+                        --network network=default \
+                        --disk vol=default/servidorNAS.qcow2 \ 
+                        --memory 1024 \
+                        --vcpus 1 
+```
+
+Despues de hacer la configuración pertinente, hemos metido la nueva interfaz para la *red-intra*
+
+```
+nas-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 52:54:00:c7:be:72 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.122.113/24 brd 192.168.122.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fec7:be72/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN qlen 1000
+    link/ether 52:54:00:f0:ba:36 brd ff:ff:ff:ff:ff:ff
+```
+Levnatamos la eth1, pero pimero hacemos la configuracon:
+```
+auto eth1
+iface eth1 inet static
+    address 192.168.200.2
+    netmask 255.255.255.0
+```
+y quedaria asi:
+
+```
+/home/user # nano /etc/network/interfaces 
+/home/user # ifup eth1
+/home/user # ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 52:54:00:c7:be:72 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.122.113/24 brd 192.168.122.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fec7:be72/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 52:54:00:f0:ba:36 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.2/24 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fef0:ba36/64 scope link 
+       valid_lft forever preferred_lft forever
+```
+Una vez que haga esto quitamos la red default, y no nos podremos meter por ssh, si no que tendremos que meter a traves de su consola, si hacemos un ip a no nos sladrta ninguna ip, por lo que tendremso que merternos en lo de las iinetrfaces y cambiar el eth1 por eth0, y si nos saldra la estatuica que pusimos.
+
+### Creación de contenedores
+
+#### Contendero servidorDHCP
+
+iNSTALE LAS PLANTILLAS NECESARIAS:
+
+```
+apt install lxc debootstrap
+```
+
+
+```
+madandy@toyota-hilux:~$ sudo lxc-create -n servidorDHCP -t debian -- --release bookworm
+debootstrap is /usr/sbin/debootstrap
+Checking cache download in /var/cache/lxc/debian/rootfs-bookworm-amd64 ... 
+Downloading debian minimal ...
+I: Target architecture can be executed
+I: Retrieving InRelease 
+I: Checking Release signature
+I: Valid Release signature (key id 4D64FEC119C2029067D6E791F8D2585B8783D481)
+I: Retrieving Packages 
+```
+
+#### Contenedor servidorWEB
+
+```
+madandy@toyota-hilux:~$ sudo lxc-create -n servidorWeb -t ubuntu -- --release jammy
+Checking cache download in /var/cache/lxc/jammy/rootfs-amd64 ... 
+Installing packages in template: apt-transport-https,ssh,vim,language-pack-en
+Downloading ubuntu jammy minimal ...
+I: Target architecture can be executed
+W: Cannot check Release signature; keyring file not available /usr/share/keyrings/ubuntu-archive-keyring.gpg
+I: Retrieving InRelease 
+
+```
+
+Ahora lo que haremos sera entrar con el comando:
+
+```
+sudo lxc-attach -n servidorDHCP
+```
+
+y editaremos el fichero para que nos deje entrar desde nuestro host al servidorDHCP
+
+```
+root@servidorDHCP:~# nano /etc/ssh/sshd_config
+root@servidorDHCP:~# systemctl restart ssh
+root@servidorDHCP:~# cd .ssh/
+root@servidorDHCP:~/.ssh# ls
+root@servidorDHCP:~/.ssh# nano authorized_keys
+root@servidorDHCP:~/.ssh# ls
+authorized_keys
+root@servidorDHCP:~/.ssh# reboot
+Failed to connect to bus: No existe el fichero o el directorio
+root@servidorDHCP:~/.ssh# 
+madandy@toyota-hilux:~$ sudo lxc-attach -n servidorDHCP
+root@servidorDHCP:/# 
+```
+
+#### ServidorWeb
+
+```
+root@servidorWeb:~# mkdir .ssh
+root@servidorWeb:~# cd .ssh/
+root@servidorWeb:~/.ssh# nano authorized_keys
+root@servidorWeb:~/.ssh# cd
+root@servidorWeb:~# chmod 700 .ssh/
+root@servidorWeb:~# cd .ssh/
+root@servidorWeb:~/.ssh# chmod 600 authorized_keys 
+root@servidorWeb:~/.ssh# restart
+bash: restart: command not found
+root@servidorWeb:~/.ssh# cd
+root@servidorWeb:~# reboot 
+root@servidorWeb:~# 
+madandy@toyota-hilux:~$ sudo lxc-attach -n servidorWeb
+root@servidorWeb:/# 
+```
+
+Y entrando desde el host 
+
+```
+madandy@toyota-hilux:~/.ssh$ ssh root@10.0.3.87
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-25-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+root@servidorWeb:~# 
+```
+#### Ponerlo automaticamente y su ip 
+
+Servidor web
+
+```
+root@servidorWeb:/# nano /etc/netplan/10-lxc.yaml 
+root@servidorWeb:/# reboot 
+root@servidorWeb:/# 
+madandy@toyota-hilux:~$ sudo lxc-attach -n servidorWeb
+root@servidorWeb:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0@if32: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:9a:f5:61 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.200.4/24 brd 192.168.200.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::216:3eff:fe9a:f561/64 scope link 
+       valid_lft forever preferred_lft forever
+root@servidorWeb:/# 
+```
+
+#### Servidor DHCP
+
+```
+madandy@toyota-hilux:~$ sudo lxc-attach -n servidorDHCP
+root@servidorDHCP:/# nano /etc/network/interfaces
+root@servidorDHCP:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0@if29: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:df:6c:99 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::216:3eff:fedf:6c99/64 scope link 
+       valid_lft forever preferred_lft forever
+root@servidorDHCP:/# nano /etc/network/interfaces
+root@servidorDHCP:/# reboot 
+Failed to connect to bus: No existe el fichero o el directorio
+root@servidorDHCP:/# 
+madandy@toyota-hilux:~$ sudo lxc-attach -n servidorDHCP
+root@servidorDHCP:/# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0@if34: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:df:6c:99 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.200.3/24 brd 192.168.200.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::216:3eff:fedf:6c99/64 scope link 
+       valid_lft forever preferred_lft forever
+root@servidorDHCP:/# 
+
+```
+
