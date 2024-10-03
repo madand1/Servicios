@@ -5,7 +5,7 @@
 ### Creación de la maquina:
 
 ```
-madadny@toyota-hylux: virt-install --connect qemu:///system \
+alejandro$ virt-install --connect qemu:///system \
 --virt-type kvm \
 --name practica1 \
 --cdrom ~/iso/debian-12.7.0-amd64-netinst.iso \
@@ -16,6 +16,11 @@ madadny@toyota-hylux: virt-install --connect qemu:///system \
 Empezando la instalación...
 
 ```
+>[!WARNING]
+> Instalación de máquina virtual
+
+_Mientras que estan la instalación, si no ponemos contraseña en el root, directamente el usuario que creemos se metera en el grupo sudoers._
+
 ### Entramos como root, y hacemos un update, y la instalación.
 
 ```
@@ -239,4 +244,99 @@ virt-clone --connect=qemu:///system \
 ```
 
 
+# Parte2
 
+## Práctica 2/3: Virtualización en Linux y servidor DHCP (Parte 1)
+
+### Creación del escenario
+
+![Escenario](img/escenario.png)
+
+# Crea una red muy aislada, que se llame red_intra que creará el puente br-intra. Esta red se tiene que iniciar cada vez que encendemos el host.
+Tendremos que tener un fichero en xml, que pondra lo siguiente: 
+
+```
+<network>
+  <name>red_intra</name>  
+  <bridge name='br-intra' stp='on' delay='0'/>
+  <forward mode='none'/>
+</network>
+```
+Una vez creado el fichero, tendremos que irnos a donde esta y abrir la terminal (*por comodidad*), y hacer lo siguiente:
+
+- Definir la red:
+  
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$  virsh -c qemu:///system net-define red-intra.xml
+La red red-intra se encuentra definida desde red-intra.xml
+```
+- Iniciar la red:
+  
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-start red-intra 
+La red red-intra se ha iniciado
+```
+- Iniciar automaticamente la red cada vez que arranquemos:
+  
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-autostart red-intra 
+La red red-intra ha sido marcada para iniciarse automáticamente
+```
+- Comprobar con el siguiente comando, la lista de las redes que tenemos activadas, y con su correspondiente inicio automático:
+  
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-list
+ Nombre        Estado   Inicio automático   Persistente
+---------------------------------------------------------
+ default       activo   si                  si
+ red-externa   activo   si                  si
+ red-intra     activo   si                  si
+ red-nat       activo   si                  si
+```
+
+### Creación del router
+
+>[!CAUTION] 
+> Al estar la iso directamente en el home, tendremos que poner la *~*
+
+
+```
+madandy@toyota-hilux:~$ virt-install --connect qemu:///system \
+  --virt-type kvm \
+  --name router-andy \
+  --cdrom ~/iso/debian-12.7.0-amd64-netinst.iso \
+  --os-variant debian11 \
+  --network network=red-intra \
+  --network bridge=br0 \
+  --disk path=/var/lib/libvirt/images/disco_raw.img,format=raw,size=10 \
+  --memory 1024 \
+  --vcpus 1
+
+
+```
+
+- Para esta ocasión al hacerlo, he descargado el ```apt sudo``` y meter al usuario _user_ dentro del grupo sudoers, como anteriormente.
+
+- Una vez hecho esto he tenido que hacer un fichero el en *.ssh/authorized_keys* y copiarlo de mi *host* a la máquina virtual.
+
+- Si hacemos lo que seria la conexión seria tal que asi:
+
+```
+user@router-andy:~$ mkdir -p ~/.ssh
+user@router-andy:~$ chmod 700 ~/.ssh
+user@router-andy:~$ nano ~/.ssh/authorized_keys
+user@router-andy:~$ 
+cerrar sesión
+Connection to 172.22.7.27 closed.
+madandy@toyota-hilux:~$ ssh user@172.22.7.27
+Linux router-andy 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Oct  3 10:19:01 2024 from 172.22.7.202
+
+```
