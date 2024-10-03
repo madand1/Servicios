@@ -250,7 +250,7 @@ virt-clone --connect=qemu:///system \
 
 ### Creación del escenario
 
-![Escenario](/Servicios/img/escenario.png)
+![Escenario]((/img/escenario.png)
 
 
 # Crea una red muy aislada, que se llame red_intra que creará el puente br-intra. Esta red se tiene que iniciar cada vez que encendemos el host.
