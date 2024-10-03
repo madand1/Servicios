@@ -250,7 +250,8 @@ virt-clone --connect=qemu:///system \
 
 ### Creación del escenario
 
-![Escenario](img/escenario.png)
+![Escenario](/SegundoASIR/github/Servicios/img/escenario.png)
+
 
 # Crea una red muy aislada, que se llame red_intra que creará el puente br-intra. Esta red se tiene que iniciar cada vez que encendemos el host.
 Tendremos que tener un fichero en xml, que pondra lo siguiente: 
