@@ -841,3 +841,133 @@ nas-andy:~$
 
 Como podemos ver todos nos pega el salto que es a aprtir del 192.168.200.1, que es la ip del router.
 
+# Parte 3
+
+## Creación de un cliente:
+
+1. Primero crearemos el volumen, el cual llamaremos *vol_cliente1* de una forma enlazada, por rapidez, lo haremos a traves del siguiente comando:
+
+```
+madandy@toyota-hilux:~$ virsh -c qemu:///system vol-create-as default vol_cliente1.qcow2 5G \
+                                    --format qcow2 \
+                                    --backing-vol practica1.qcow2 \
+                                    --backing-vol-format qcow2
+Se ha creado el volumen vol_cliente1.qcow2
+
+
+```
+
+2. Segundo crearemos el cliente:
+
+
+```
+madandy@toyota-hilux:~$ virt-clone --connect=qemu:///system \
+                --original plantilla-cliente \
+                --name cliente1 \
+                --file /var/lib/libvirt/images/vol_cliente1.qcow2 \
+                --preserve-data
+
+El clon 'cliente1' ha sido creado exitosamente.
+madandy@toyota-hilux:~$ 
+
+```
+Una vez hecho esto, la maquina estara creada, ahora procederemos a cambair el nombre de la maquna en el fichero */etc/hostname*, y siendo sudo tendremso que hacer lo siguiente:
+
+1. Generar una nueva key:
+   1. sudo ssh-keygen -A
+   2. sudo systemctl restart ssh
+2. Conectarnos a través de nuestro host:
+
+```
+madandy@toyota-hilux:~$ ssh debian@192.168.122.93
+The authenticity of host '192.168.122.93 (192.168.122.93)' can't be established.
+ED25519 key fingerprint is SHA256:Xc5QKo47RILifhxVjbhg8HUH9RMwM6WXBcBwtCmIECs.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.122.93' (ED25519) to the list of known hosts.
+debian@192.168.122.93's password: 
+Linux Cliente1-andy 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Oct  4 17:23:25 2024
+debian@Cliente1-andy:~$ 
+
+```
+3. Copiar nuestra clave publkica y la de jose domingo en el fichero *authorized_keys*
+
+```
+ebian@Cliente1-andy:~$ sudo su
+root@Cliente1-andy:/home/debian# cd.ssh
+bash: cd.ssh: orden no encontrada
+root@Cliente1-andy:/home/debian# cd .ssh
+root@Cliente1-andy:/home/debian/.ssh# ls
+authorized_keys
+root@Cliente1-andy:/home/debian/.ssh# nano authorized_keys 
+root@Cliente1-andy:/home/debian/.ssh# 
+
+```
+4. Y ahora en virt manager, lo que haremos sera poner la *red_intra*
+
+y pondremos la configuracion de la interfaz:
+
+```
+auto enp7s0
+iface enp7s0 inet static
+    address 192.168.200.13
+    netmask 255.255.255.0
+    gateway 192.168.200.1
+
+```
+5. Comprobación de ip:
+
+```
+debian@Cliente1-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp7s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:56:fa:0b brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.13/24 brd 192.168.200.255 scope global enp7s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe56:fa0b/64 scope link 
+       valid_lft forever preferred_lft forever
+
+
+```
+
+
+Como estoy en mi casa, he tenido que modificar el dichero *.ssh/config* y poner la siguiente modificación en el router:
+
+```
+Host router
+  HostName  192.168.1.148
+  User user 
+  ForwardAgent yes
+
+```
+Y he añadido a mi cliente, al fichero, con la ip *192.168.200.13*
+
+Y podemos comprobar que tiene salida fuera:
+
+```
+Last login: Fri Oct  4 17:49:12 2024 from 192.168.200.1
+debian@Cliente1-andy:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=15.2 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=14.6 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=12.9 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=116 time=14.2 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 12.897/14.233/15.234/0.857 ms
+
+```

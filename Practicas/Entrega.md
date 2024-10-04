@@ -427,3 +427,103 @@ Last login: Fri Oct  4 12:14:24 2024 from 192.168.200.1
 root@servidorDHCP:~# 
 
 </pre>
+
+
+
+h1. Práctica 3/3: Virtualización en Linux y servidor DHCP
+
+h2. 1.Demostración de que el volumen de la máquina cliente1 utiliza como imagen base el volumen de la plantilla plantilla-cliente
+
+Comando usado:
+
+<pre>
+madandy@toyota-hilux:~$ virsh -c qemu:///system dumpxml cliente1
+<domain type='kvm' id='4'>
+  <name>cliente1</name>
+  <uuid>4b64c4d6-e2f
+</pre>
+
+Y buscamos lo siguiente, la etiqueta que ponga _disk_ :
+
+<pre>
+....
+ <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' discard='unmap'/>
+      <source file='/var/lib/libvirt/images/vol_cliente1.qcow2' index='2'/>
+      <backingStore type='file' index='3'>
+        <format type='qcow2'/>
+        <source file='/var/lib/libvirt/images/practica1.qcow2'/>
+        <backingStore/>
+      </backingStore>
+....
+</pre>
+
+h2. 2.Demostración que tanto el volumen de cliente1, cómo su sistema de ficheros tiene el tamaño indicado en el enunciado
+
+<pre>
+```
+madandy@toyota-hilux:~$ virsh -c qemu:///system vol-info --pool default vol_cliente1.qcow2
+Nombre:         vol_cliente1.qcow2
+Tipo:           archivo
+Capacidad:      5,00 GiB
+Ubicación:     889,01 MiB
+
+```
+</pre>
+
+<pre>
+```
+debian@Cliente1-andy:~$ df -h
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+udev             458M      0  458M   0% /dev
+tmpfs             97M   600K   96M   1% /run
+/dev/vda1        2,0G   1,7G  130M  94% /
+tmpfs            481M      0  481M   0% /dev/shm
+tmpfs            5,0M      0  5,0M   0% /run/lock
+tmpfs             97M      0   97M   0% /run/user/1000
+
+
+```
+</pre>
+
+h2. 3.Muestra la dirección IP de cliente1 y la puerta de enlace.
+
+<pre>
+```
+debian@Cliente1-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp7s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:56:fa:0b brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.13/24 brd 192.168.200.255 scope global enp7s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe56:fa0b/64 scope link 
+       valid_lft forever preferred_lft forever
+debian@Cliente1-andy:~$ ip route 
+default via 192.168.200.1 dev enp7s0 onlink 
+192.168.200.0/24 dev enp7s0 proto kernel scope link src 192.168.200.13 
+
+```
+</pre>
+
+h2. 4.Demostración que tiene acceso al exterior.
+
+<pre>
+```
+debian@Cliente1-andy:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=16.3 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=13.6 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=13.8 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=116 time=12.6 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 12.642/14.093/16.315/1.356 ms
+
+```
+<pre>
