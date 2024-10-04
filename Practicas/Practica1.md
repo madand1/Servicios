@@ -641,6 +641,85 @@ net.ipv4.ip_forward = 1
 
 Poner en los contenedores, la puerta de enlace, que en este caso sera la 192.168.200.1/24, tanto contenedores como servidor-NAS.
 
+En ubuntu:
+
+```
+root@servidorWeb:~# nano /etc/network/interfaces
+root@servidorWeb:~# sudo nano /etc/netplan/01-netcfg.yaml
+root@servidorWeb:~# nano /etc/ne
+netconfig            networkd-dispatcher/ newt/
+netplan/             networks             
+root@servidorWeb:~# nano /etc/net
+netconfig            networkd-dispatcher/ 
+netplan/             networks             
+root@servidorWeb:~# nano /etc/netplan/10-lxc.yaml 
+root@servidorWeb:~# sudo netplan apply
+
+** (generate:192): WARNING **: 12:24:54.494: Permissions for /etc/netplan/10-lxc.yaml are too open. Netplan configuration should NOT be accessible by others.
+/etc/netplan/10-lxc.yaml:8:7: Error in network definition: unknown key 'gateway'
+      gateway: 192.168.200.1
+      ^
+root@servidorWeb:~# cat /etc/net
+netconfig            networkd-dispatcher/ 
+netplan/             networks             
+root@servidorWeb:~# cat /etc/netplan/10-lxc.yaml 
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses:
+        - 192.168.200.4/24
+      gateway: 192.168.200.1
+root@servidorWeb:~# nano /etc/netplan/10-lxc.yaml 
+root@servidorWeb:~# sudo netplan apply
+
+** (generate:199): WARNING **: 12:25:53.534: Permissions for /etc/netplan/10-lxc.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (generate:199): WARNING **: 12:25:53.534: `gateway4` has been deprecated, use default routes instead.
+See the 'Default routes' section of the documentation for more details.
+WARNING:root:Cannot call Open vSwitch: ovsdb-server.service is not running.
+
+** (process:197): WARNING **: 12:25:53.618: Permissions for /etc/netplan/10-lxc.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (process:197): WARNING **: 12:25:53.619: `gateway4` has been deprecated, use default routes instead.
+See the 'Default routes' section of the documentation for more details.
+
+** (process:197): WARNING **: 12:25:53.679: Permissions for /etc/netplan/10-lxc.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (process:197): WARNING **: 12:25:53.679: `gateway4` has been deprecated, use default routes instead.
+See the 'Default routes' section of the documentation for more details.
+
+** (process:197): WARNING **: 12:25:53.679: Permissions for /etc/netplan/10-lxc.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (process:197): WARNING **: 12:25:53.679: `gateway4` has been deprecated, use default routes instead.
+See the 'Default routes' section of the documentation for more details.
+root@servidorWeb:~# ping 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=17.3 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=17.7 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=18.4 ms
+^C
+--- 8.8.8.8 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 17.341/17.793/18.369/0.428 ms
+root@servidorWeb:~# 
+
+```
+En debian, tendremos que hacer en el fichero *etc/network/interfaces* :
+
+```
+root@servidorDHCP:~# cat /etc/network/interfaces
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+    address 192.168.200.3
+    netmask 255.255.255.0
+    gateway 192.168.200.1
+
+```
 Una vez hecho esto, podemos comprobar la conexión al exterior, pero metiendonos en los contenedores con el comando *attach*, pero para poder entrar desde el host, lo que haremos sera editar el fichero siguiente y en nuestro caso será poner lo siguiente:
 tendremos que crear el archivo config, en .*ssh/config* y poner lo siguiente:
 
