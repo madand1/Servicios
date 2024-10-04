@@ -615,4 +615,150 @@ root@servidorDHCP:/# ip a
 root@servidorDHCP:/# 
 
 ```
+### Pregunta 5
+
+Poner en el router la siguiente regla de traducción:
+
+```
+-A POSTROUTING -s 192.168.200.0/24 -o enp2s0 -j MASQUERADE
+```
+Comprobación:
+
+```
+Chain POSTROUTING (policy ACCEPT 15 packets, 1066 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+   53  3655 MASQUERADE  0    --  *      enp2s0  192.168.200.0/24     0.0.0.0/0  
+```
+
+Habiliatr el ipforward:
+
+```
+user@router-andy:~$ sudo sysctl net.ipv4.ip_forward
+net.ipv4.ip_forward = 1
+
+```
+>[!WARNING]
+
+Poner en los contenedores, la puerta de enlace, que en este caso sera la 192.168.200.1/24, tanto contenedores como servidor-NAS.
+
+Una vez hecho esto, podemos comprobar la conexión al exterior, pero metiendonos en los contenedores con el comando *attach*, pero para poder entrar desde el host, lo que haremos sera editar el fichero siguiente y en nuestro caso será poner lo siguiente:
+tendremos que crear el archivo config, en .*ssh/config* y poner lo siguiente:
+
+```
+madandy@toyota-hilux:~$ cat .ssh/config 
+Host router
+  HostName  172.22.6.245
+  User user 
+  ForwardAgent yes
+
+
+Host servidorNAS
+  HostName 192.168.200.2
+  User user
+  ForwardAgent yes
+  ProxyJump router
+
+Host servidorDHCP
+  HostName 192.168.200.3
+  User root
+  ForwardAgent yes
+  ProxyJump router
+
+Host servidorWeb
+  HostName 192.168.200.4
+  User root
+  ForwardAgent yes
+  ProxyJump router
+
+```
+
+Una vez esto lo que tendremos que hacer sera la comprobación de la conexión directa ya que lo que hemos establecido es es que pegue el salto directamente a los *contendores*(servidorWeb, servidorDHCP), como al *servidorNAS*.
+
+
+- Desde mi host al router:
+```
+madandy@toyota-hilux:~$ ssh router 
+Linux router-andy 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Oct  4 12:07:36 2024
+user@router-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:96:b5:d0 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.1/24 brd 192.168.200.255 scope global enp1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe96:b5d0/64 scope link 
+       valid_lft forever preferred_lft forever
+3: enp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:9b:9f:6a brd ff:ff:ff:ff:ff:ff
+    inet 172.22.6.245/16 brd 172.22.255.255 scope global dynamic enp2s0
+       valid_lft 75881sec preferred_lft 75881sec
+    inet6 fe80::5054:ff:fe9b:9f6a/64 scope link 
+       valid_lft forever preferred_lft forever
+user@router-andy:~$ 
+```
+
+- Desde el host a los contenedores:
+  1. ServidorWeb
+
+```
+madandy@toyota-hilux:~$ ssh -A servidorWeb 
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-26-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Fri Oct  4 10:12:31 2024 from 192.168.200.1
+root@servidorWeb:~# 
+
+```
+
+  2. ServidorDHCP
+
+
+```
+madandy@toyota-hilux:~$ ssh -A servidorDHCP 
+Linux servidorDHCP 6.1.0-26-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-09-30) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Fri Oct  4 12:14:24 2024 from 192.168.200.1
+root@servidorDHCP:~# 
+
+```
+
+- Desde el host al servidorNAS
+
+```
+madandy@toyota-hilux:~$ ssh servidorNAS 
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <https://wiki.alpinelinux.org/>.
+
+You can setup the system with the command: setup-alpine
+
+You may change this message by editing /etc/motd.
+
+nas-andy:~$ 
+
+```
+
+Como podemos ver todos nos pega el salto que es a aprtir del 192.168.200.1, que es la ip del router.
 
