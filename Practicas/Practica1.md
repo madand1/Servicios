@@ -971,3 +971,47 @@ PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
 rtt min/avg/max/mdev = 12.897/14.233/15.234/0.857 ms
 
 ```
+
+## Creación del cliente 2
+
+h2. Conexion ssh sin contraseña
+
+<pre>
+madandy@toyota-hilux:~$ ssh Cliente2 
+Linux cliente2 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Tue Oct  8 10:11:23 2024
+</pre>
+
+h2. Salida a internet
+
+<pre>
+debian@cliente2:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=14.3 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=15.2 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=14.9 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=110 time=15.2 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 14.315/14.907/15.206/0.362 ms
+
+</pre>
+
+h2. Volumen de 10GB
+<pre>
+debian@cliente2:~$ lsblk
+NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+sr0     11:0    1 1024M  0 rom  
+vda    254:0    0   10G  0 disk 
+├─vda1 254:1    0    2G  0 part /
+├─vda2 254:2    0    1K  0 part 
+└─vda3 254:3    0 1023K  0 part 
+</pre>
