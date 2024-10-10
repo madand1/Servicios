@@ -139,3 +139,223 @@ iface enp7s0 inet dhcp
 ```
 
 Y vemos como se da con la imagen de arriba
+
+8. Creacion del cliente con windows 10
+
+9. Conecta una máquina Windows a la red_intra y comprueba que también toma direccionamiento dinámico.
+
+![cliente_dhcp](img/dhcp-w10.png)
+
+10. Realizar una captura, desde el servidor usando tcpdump, de los cuatro paquetes que corresponden a una concesión: DISCOVER, OFFER, REQUEST, ACK
+
+```tcpdump -i eth0 -n -vv udp port 67 or port 68```
+
+```
+root@servidorDHCP:/# tcpdump -i eth0 -n -vv udp port 67 or port 68
+tcpdump: listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+08:55:23.352584 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 329)
+    0.0.0.0.68 > 255.255.255.255.67: [udp sum ok] BOOTP/DHCP, Request from 52:54:00:56:fa:0b, length 301, xid 0xe2b66b37, Flags [none] (0x0000)
+	  Client-Ethernet-Address 52:54:00:56:fa:0b
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message (53), length 1: Discover
+	    Requested-IP (50), length 4: 192.168.200.10
+	    Hostname (12), length 13: "Cliente1-andy"
+	    Parameter-Request (55), length 13: 
+	      Subnet-Mask (1), BR (28), Time-Zone (2), Default-Gateway (3)
+	      Domain-Name (15), Domain-Name-Server (6), Unknown (119), Hostname (12)
+	      Netbios-Name-Server (44), Netbios-Scope (47), MTU (26), Classless-Static-Route (121)
+	      NTP (42)
+	    Client-ID (61), length 19: hardware-type 255, 00:56:fa:0b:00:01:00:01:2e:98:f3:6f:52:54:00:56:fa:0b
+08:55:24.353885 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.200.3.67 > 192.168.200.10.68: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0xe2b66b37, Flags [none] (0x0000)
+	  Your-IP 192.168.200.10
+	  Client-Ethernet-Address 52:54:00:56:fa:0b
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message (53), length 1: Offer
+	    Server-ID (54), length 4: 192.168.200.3
+	    Lease-Time (51), length 4: 1800
+	    Subnet-Mask (1), length 4: 255.255.255.0
+	    Default-Gateway (3), length 4: 192.168.200.1
+	    Domain-Name (15), length 11: "example.org"
+	    Domain-Name-Server (6), length 4: 172.22.0.1
+08:55:24.355438 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 335)
+    0.0.0.0.68 > 255.255.255.255.67: [udp sum ok] BOOTP/DHCP, Request from 52:54:00:56:fa:0b, length 307, xid 0xe2b66b37, Flags [none] (0x0000)
+	  Client-Ethernet-Address 52:54:00:56:fa:0b
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message (53), length 1: Request
+	    Server-ID (54), length 4: 192.168.200.3
+	    Requested-IP (50), length 4: 192.168.200.10
+	    Hostname (12), length 13: "Cliente1-andy"
+	    Parameter-Request (55), length 13: 
+	      Subnet-Mask (1), BR (28), Time-Zone (2), Default-Gateway (3)
+	      Domain-Name (15), Domain-Name-Server (6), Unknown (119), Hostname (12)
+	      Netbios-Name-Server (44), Netbios-Scope (47), MTU (26), Classless-Static-Route (121)
+	      NTP (42)
+	    Client-ID (61), length 19: hardware-type 255, 00:56:fa:0b:00:01:00:01:2e:98:f3:6f:52:54:00:56:fa:0b
+08:55:24.358950 IP (tos 0x10, ttl 128, id 0, offset 0, flags [none], proto UDP (17), length 328)
+    192.168.200.3.67 > 192.168.200.10.68: [udp sum ok] BOOTP/DHCP, Reply, length 300, xid 0xe2b66b37, Flags [none] (0x0000)
+	  Your-IP 192.168.200.10
+	  Client-Ethernet-Address 52:54:00:56:fa:0b
+	  Vendor-rfc1048 Extensions
+	    Magic Cookie 0x63825363
+	    DHCP-Message (53), length 1: ACK
+	    Server-ID (54), length 4: 192.168.200.3
+	    Lease-Time (51), length 4: 1800
+	    Subnet-Mask (1), length 4: 255.255.255.0
+	    Default-Gateway (3), length 4: 192.168.200.1
+	    Domain-Name (15), length 11: "example.org"
+	    Domain-Name-Server (6), length 4: 172.22.0.1
+
+4 packets captured
+4 packets received by filter
+0 packets dropped by kernel
+
+```
+
+11. Cambio de tiempo de concesion en el servidor DHCP:
+
+ESTO SON 10 SEGUNDOS
+
+default-lease-time 10;
+max-lease-time 10;
+
+Ahora lo que haremos sera hacer un restart del dhcp : *systemctl restart isc-dhcp-server* para que coja la configuracion que le dimos.
+
+Vemos como tenemos la ip asignada por dhcp tanto en el cliente windows y linux.
+
+![cliente_dhcp](img/ip-dhcp-antes.png)
+
+Y ahora hacemos un systemctl stop isc-dhcp-server, y nos ocurre que el cliente windows pilla la dirección de la pipa y el cliente linux se nos queda sin dirección ip.
+
+![cliente_dhcp](img/dhcp-despues.png)
+
+12. Cambiamos lo que va siendo el rango de ips, y estas nos hanj cogido las qu eestan denrtro del rango.
+
+```
+root@servidorDHCP:/# nano /etc/dhcp/dhcpd.conf
+root@servidorDHCP:/# systemctl restart isc-dhcp-server
+root@servidorDHCP:/# 
+
+```
+
+13. Actualmente los servidores servidorWeb y servidorNAS tienen una configuración de red estática. Vamos a configurar una reserva para cada máquina. Configura de forma adecuada el servidor dhcp para que ofrezca a estos servidores la misma IP (reserva) que habíamos configurado de forma estática.
+
+```
+# Reservas
+
+# Reserva para el servidorWeb
+host servidorWeb {
+    hardware ethernet 00:16:3e:9a:f5:61;
+    fixed-address 192.168.200.33;
+}
+
+# Reserva para el servidorNAS
+host servidorNAS {
+    hardware ethernet 52:54:00:f0:ba:36;
+    fixed-address 192.168.200.56;
+}
+```
+
+14. Modifica la configuración de red del servidorWeb y el servidorNAS para que tomen la configuración de red de forma dinámica.
+
+```
+madandy@toyota-hilux:~$ ssh servidorNAS 
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <https://wiki.alpinelinux.org/>.
+
+You can setup the system with the command: setup-alpine
+
+You may change this message by editing /etc/motd.
+
+nas-andy:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether 52:54:00:f0:ba:36 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.56/24 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fef0:ba36/64 scope link 
+       valid_lft forever preferred_lft forever
+nas-andy:~$ 
+```
+
+```
+madandy@toyota-hilux:~$ ssh servidorWeb 
+The authenticity of host '192.168.200.33 (<no hostip for proxy command>)' can't be established.
+ED25519 key fingerprint is SHA256:1rSnmoqJXlY0mnVd7aGFe/U5PgM4FE4S/dGu1HC3Nr4.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:54: [hashed name]
+    ~/.ssh/known_hosts:60: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.200.33' (ED25519) to the list of known hosts.
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-26-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Fri Oct  4 12:18:02 2024 from 192.168.200.1
+root@servidorWeb:~# ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0@if16: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:9a:f5:61 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.200.33/24 metric 100 brd 192.168.200.255 scope global dynamic eth0
+       valid_lft 8sec preferred_lft 8sec
+    inet6 fe80::216:3eff:fe9a:f561/64 scope link 
+       valid_lft forever preferred_lft forever
+root@servidorWeb:~# 
+```
+
+
+Para esta parte:
+
+
+fichero de configuracin:
+
+```
+madandy@toyota-hilux:~$ cat .ssh/config 
+Host router
+  HostName  172.22.3.69
+  User user 
+  ForwardAgent yes
+
+
+Host servidorNAS
+  HostName 192.168.200.56
+  User user
+  ForwardAgent yes
+  ProxyJump router
+
+Host servidorDHCP
+  HostName 192.168.200.3
+  User root
+  ForwardAgent yes
+  ProxyJump router
+
+Host servidorWeb
+  HostName 192.168.200.33
+  User root
+  ForwardAgent yes
+  ProxyJump router
+
+
+Host cliente1
+  HostName 192.168.200.13
+  User debian
+  ForwardAgent yes
+  ProxyJump router
+```
