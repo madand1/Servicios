@@ -123,7 +123,7 @@ oct 09 08:43:38 servidorDHCP systemd[1]: Started isc-dhcp-server.service - LSB: 
 
 Antes teniamos la ip estatica la cual era 192.168.200.13/24 ahora se le ha asignado 192.168.200.10/24, esto se ve asi:
 
-![cliente_dhcp](img/dhcp-client1.png)
+![cliente_dhcp](/img/dhcp-client1.png)
 
 Para ello lo que hemos hecho ha sido lo siguiente:
 
@@ -144,7 +144,7 @@ Y vemos como se da con la imagen de arriba
 
 9. Conecta una máquina Windows a la red_intra y comprueba que también toma direccionamiento dinámico.
 
-![cliente_dhcp](img/dhcp-w10.png)
+![cliente_dhcp](/img/dhcp-w10.png)
 
 10. Realizar una captura, desde el servidor usando tcpdump, de los cuatro paquetes que corresponden a una concesión: DISCOVER, OFFER, REQUEST, ACK
 
@@ -226,11 +226,11 @@ Ahora lo que haremos sera hacer un restart del dhcp : *systemctl restart isc-dhc
 
 Vemos como tenemos la ip asignada por dhcp tanto en el cliente windows y linux.
 
-![cliente_dhcp](img/ip-dhcp-antes.png)
+![cliente_dhcp](/img/ip-dhcp-antes.png)
 
 Y ahora hacemos un systemctl stop isc-dhcp-server, y nos ocurre que el cliente windows pilla la dirección de la pipa y el cliente linux se nos queda sin dirección ip.
 
-![cliente_dhcp](img/dhcp-despues.png)
+![cliente_dhcp](/img/dhcp-despues.png)
 
 12. Cambiamos lo que va siendo el rango de ips, y estas nos hanj cogido las qu eestan denrtro del rango.
 
@@ -244,6 +244,11 @@ root@servidorDHCP:/#
 13. Actualmente los servidores servidorWeb y servidorNAS tienen una configuración de red estática. Vamos a configurar una reserva para cada máquina. Configura de forma adecuada el servidor dhcp para que ofrezca a estos servidores la misma IP (reserva) que habíamos configurado de forma estática.
 
 ```
+root@servidorDHCP:/# nano /etc/dhcp/dhcpd.conf
+
+.......
+......
+......
 # Reservas
 
 # Reserva para el servidorWeb
@@ -257,6 +262,10 @@ host servidorNAS {
     hardware ethernet 52:54:00:f0:ba:36;
     fixed-address 192.168.200.56;
 }
+
+.....
+....
+....
 ```
 
 14. Modifica la configuración de red del servidorWeb y el servidorNAS para que tomen la configuración de red de forma dinámica.
