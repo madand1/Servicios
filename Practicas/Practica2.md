@@ -144,7 +144,11 @@ Y vemos como se da con la imagen de arriba
 
 9. Conecta una máquina Windows a la red_intra y comprueba que también toma direccionamiento dinámico.
 
+<<<<<<< HEAD
 ![cliente_dhcp](/img/dhcp-w10.png)
+=======
+![clientedhcp](/img/dhcp-w10.png)
+>>>>>>> 980ca238cd9db03f51ecf40de32b697dd6c7bbfe
 
 10. Realizar una captura, desde el servidor usando tcpdump, de los cuatro paquetes que corresponden a una concesión: DISCOVER, OFFER, REQUEST, ACK
 
