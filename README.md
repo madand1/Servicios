@@ -6,7 +6,6 @@
 - [1. Práctica 1](./Practicas/Practica1.md)
 - [2. Práctica 2](./Practicas/Practica2.md)
 
-- [1. Práctica 2](./Practicas/Practica2.md)
 
 
 ## Autor :computer:
