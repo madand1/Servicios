@@ -247,3 +247,50 @@ h2. Una captura de pantalla donde se vea la ip que ha tomado de forma dinámica 
 Las reservas son configuraciones predefinidas, en este caso por mi, y esto lo que hace es que las meta a mano en el fichero /etc/dhcp/dhcp.conf, mierras que las conlas concesiones son direcciones IP que el server de DHCP ha asigando de manera temporal y estas se almacenan en el archivo de concesiones, o lo que es lo mismo en este fichero /var/lib/dhcp/dhcpd.leases.
 
 En conclusion no se guardan en el mismo fichero.
+
+h1. Parte2
+
+h2. Configuración y demostración que has exportado un directorio desde el servidorNAS.
+
+<pre>
+
+
+
+nas-andy:~# mkdir -p /srv/web
+nas-andy:~# echo "<html><body><h1>Bienvenido al servidor web</h1></body></html>" > /srv/web/index.html
+nas-andy:~# nano /etc/exports
+nas-andy:~# cat /etc/exports 
+# /etc/exports
+#
+# See exports(5) for a description.
+
+# use exportfs -arv to reread
+#/export    192.168.1.10(rw,no_root_squash)
+
+/srv/web 192.168.200.33(rw,sync,no_subtree_check)
+nas-andy:~# exportfs -arv
+exporting 192.168.200.33:/srv/web
+nas-andy:~# exportfs -v
+/srv/web      	192.168.200.33(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+
+</pre>
+
+h2. Demostración donde se vea que has montado el directorio indicado en el contenedor.
+
+<pre>
+root@servidorWeb:~# mount | grep nfs
+192.168.200.56:/srv/web on /var/www/html type nfs4 (rw,relatime,vers=4.2,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.200.33,local_lock=none,addr=192.168.200.56)
+root@servidorWeb:~# 
+
+</pre>
+
+h2. Demostración donde se vea el acceso al servidor web desde el exterior.
+
+
+
+h2. Cambia el contenido del fichero index.html en el servidorNAS y accede a la página para comprobar que se han producido los cambios,
+
+<pre>
+nas-andy:~# echo "<html><body><h1>For the emperor</h1></body></html>" > /srv/web/index.html
+nas-andy:~# 
+</pre>

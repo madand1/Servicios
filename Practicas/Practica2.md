@@ -372,3 +372,91 @@ Host cliente1
   ForwardAgent yes
   ProxyJump router
 ```
+
+
+# Parte 2
+
+
+
+1. Instala el servidor apache2 en el contenedor servidorWeb.
+2. Instala el servidor nfs en la máquina servidorNAS.
+3. Crea en el servidorNAS un directorio /srv/web con un fichero index.html y compártelo con el contenedor servidorWeb.
+4. Monta ese directorio en el directorio /var/www/html del contenedor servidorWeb.
+5. Configura en el router una regla de DNAT para que podamos acceder al servidor Web desde el exterior. (La configuración debe ser persistente.)
+
+
+Paso a seguir para la configuración de servidorWeb
+
+1. Haremos la linstalacion de apache, con el siguiente comando:
+
+```apt install -y apache2```
+
+Donde habilitamos y arrancamos el servicio de Apache
+
+```
+systemctl enable apache2
+systemctl start apache2
+```
+Pasos a seguir para la configuración de servidorNAS
+
+1. Instalacion del servidor NFS en este servidor
+
+tendremos que acturalizar el sistema, con ```apk update```
+
+Instalar el paquete NFS con ```apk add nfs-utils``` 
+
+2. Creamos el directorio /srv/web y el archivo el cual se llamada index.html
+
+Crear el directorio --> ```mkdir -p /srv/web```
+
+Crear el archifo index.html --> ```echo "<h1>Bienvenido al Servidor Web</h1>" > /srv/web/index.html```
+
+3. Configuramos el servuidor NFS del servidorNAS.
+
+Para ello editaremo lo siguiente:
+
+```
+nas-andy:~# cat /etc/exports 
+# /etc/exports
+#
+# See exports(5) for a description.
+
+# use exportfs -arv to reread
+#/export    192.168.1.10(rw,no_root_squash)
+
+/srv/web 192.168.200.33(rw,sync,no_subtree_check)
+```
+
+Exportamos el nuevo sistema de archivos: 
+
+```exportfs -a```
+
+Y vemos lo que sera el estado si se hizo bien:
+
+```
+nas-andy:~# exportfs -v
+/srv/web      	192.168.200.33(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+```
+y ahora iniciamos el servicio NFS
+
+```
+nas-andy:~# rc-service nfs start
+ * WARNING: nfs has already been started
+
+```
+
+En el servidorWeb montaremos el director NFS, de la siguiente manera:
+
+```
+# Crear el directorio de montaje
+mkdir -p /var/www/html
+
+# Montar el directorio NFS
+mount -t nfs 192.168.200.56:/srv/web /var/www/html
+```
+
+Y la regla DNAT en el router para que se vea:
+
+```
+sudo iptables -t nat -A PREROUTING -i enp2s0 -p tcp --dport 80 -j DNAT --to-destination 192.168.200.20:80
+```
