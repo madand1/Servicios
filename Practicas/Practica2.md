@@ -665,3 +665,301 @@ vemos que se hace a traves del cliente nos sladra esto por pantalla:
 
 
 ![cliente](/img/cliente3-lynx.png)
+
+## Parte 3 
+### Ejercicio 1:
+Crearmeos la nueva red, que es una red muy aislada, la cual se llamara red-intra2 para ello haremos los siguientes pasos:
+
+1. Crear el xml, con el nomre *red-muy-aislada.xml*
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ sudo nano red-muy-aislada.xml
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ cat red-muy-aislada.xml 
+<network>
+  <name>red-intra2</name>
+  <bridge name='br-intra2' stp='on' delay='0'/>
+  <forward mode='none'/>
+</network>
+```
+
+2. Una vez creado el xml, la tendemso que definir:
+
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-d
+net-define       net-destroy      net-dhcp-leases  net-dumpxml
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-define red-muy-aislada.xml 
+La red red-intra2 se encuentra definida desde red-muy-aislada.xml
+
+
+```
+3. Y pondremos que se autoarranque:
+
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-autostart red-intra 
+red-intra   red-intra2  
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-autostart red-intra2 
+La red red-intra2 ha sido marcada para iniciarse automáticamente
+```
+4. Listarlo para ver si es cierto que esta en inicio automático:
+  
+
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/redes$ virsh -c qemu:///system net-list --all
+ Nombre        Estado     Inicio automático   Persistente
+-----------------------------------------------------------
+ default       activo     si                  si
+ red-externa   activo     si                  si
+ red-intra     activo     si                  si
+ red-intra2    inactivo   si                  si
+ red-nat       activo     si                  si
+```
+### Ejercicio 2
+
+Ahor lo que tenemos que hacer es agregarla al router de la siguiente manera:
+
+Nos vamos a virt manager y la elegimos
+
+Como podemos ver con el comando *ip -c a*, esta abajo nuestra interfaz que es la enp8s0:
+```
+user@router-andy:~$ ip -c a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:96:b5:d0 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.1/24 brd 192.168.200.255 scope global enp1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe96:b5d0/64 scope link 
+       valid_lft forever preferred_lft forever
+3: enp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:9b:9f:6a brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.148/24 brd 192.168.1.255 scope global dynamic enp2s0
+       valid_lft 86347sec preferred_lft 86347sec
+    inet6 2a0c:5a85:a307:8f00:5054:ff:fe9b:9f6a/64 scope global dynamic mngtmpaddr 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe9b:9f6a/64 scope link 
+       valid_lft forever preferred_lft forever
+4: enp8s0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 52:54:00:c3:17:09 brd ff:ff:ff:ff:ff:ff
+```
+
+Por lo que tendremos que levnatrla de la siguiente manera, la vamos a hacer persistente:
+
+
+```
+user@router-andy:~$ cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug enp2s0
+auto enp2s0
+iface enp2s0 inet dhcp
+# This is an autoconfigured IPv6 interface
+#iface enp2s0 inet6 auto
+
+# Segunda interfaz con IP estatica
+
+auto enp1s0
+iface enp1s0 inet static
+    address 192.168.200.1
+    netmask 255.255.255.0
+
+auto enp8s0
+iface enp8s0 inet static
+    address 172.16.0.1
+    netmask 255.255.0.0
+user@router-andy:~$ 
+
+```
+Despues de esto lo que hacemos es levantar con el comando *sudo ifup <inetrfazque sea>*
+
+Comprobamos que se ha levantado de locos:
+
+```
+user@router-andy:~$ ip -c a
+user@router-andy:~$ ip -c a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: enp1s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:96:b5:d0 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.200.1/24 brd 192.168.200.255 scope global enp1s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe96:b5d0/64 scope link 
+       valid_lft forever preferred_lft forever
+3: enp2s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:9b:9f:6a brd ff:ff:ff:ff:ff:ff
+    inet 192.168.1.148/24 brd 192.168.1.255 scope global dynamic enp2s0
+       valid_lft 86386sec preferred_lft 86386sec
+    inet6 2a0c:5a85:a307:8f00:5054:ff:fe9b:9f6a/64 scope global dynamic mngtmpaddr 
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe9b:9f6a/64 scope link 
+       valid_lft forever preferred_lft forever
+4: enp8s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:c3:17:09 brd ff:ff:ff:ff:ff:ff
+    inet 172.16.0.1/16 scope global enp8s0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fec3:1709/64 scope link 
+       valid_lft forever preferred_lft forever
+
+```
+Ahor vamos con la configuracion del *contendeor DHCP* -->ServidorDHCP
+
+El cual tendremos que apagar, con el siguiente comando:
+
+lxc-stop servidorDHCP
+
+e irnos al archivo de configuración : *cat /var/lib/lxc/servidorDHCP/config*
+
+Y si teniamos esto:
+
+```
+lxc.net.0.type = veth
+lxc.net.0.hwaddr = 00:16:3e:df:6c:99
+lxc.net.0.link = br-intra
+lxc.net.0.flags = up
+```
+Añadiremso lo siguuente:
+
+```
+lxc.net.1.type = veth
+lxc.net.1.hwaddr = 00:16:3e:df:6c:98
+lxc.net.1.link = br-intra2
+lxc.net.1.flags = up
+
+
+```
+
+y asi tendremos 2 interfaes en el contenedor, el cual tendremso que poner estaticamente la ip que queramos, y se quedaria asi:
+
+Porque tenemos que modificar el fichero /etc/network/interfaces y configurarlo:
+
+```
+root@servidorDHCP:~# cat /etc/network/interfaces
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet static
+    address 192.168.200.3
+    netmask 255.255.255.0
+    gateway 192.168.200.1
+
+auto eth1
+iface eth1 inet static
+    address 172.16.0.2
+    netmask 255.255.0.0
+    gateway 172.16.0.1
+
+
+
+```
+
+
+y si lo vemos ahora estaria puesto asi:
+
+```
+root@servidorDHCP:~# ip -c a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0@if23: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:df:6c:99 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 192.168.200.3/24 brd 192.168.200.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::216:3eff:fedf:6c99/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1@if24: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 00:16:3e:df:6c:98 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet 172.16.0.2/16 brd 172.16.255.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::216:3eff:fedf:6c98/64 scope link 
+       valid_lft forever preferred_lft forever
+
+```
+y para que salga a internet tendremos que ponerle el snat en el router que sera tal que asi:
+
+
+*sudo iptables -t nat -A POSTROUTING -s 172.16.0.0/24 -o enp2s0 -j MASQUERADE*
+```
+user@router-andy:~$ sudo iptables -t nat -A POSTROUTING -s 172.16.0.0/24 -o enp2s0 -j MASQUERADE
+user@router-andy:~$ sudo netfilter-persistent save
+run-parts: executing /usr/share/netfilter-persistent/plugins.d/15-ip4tables save
+run-parts: executing /usr/share/netfilter-persistent/plugins.d/25-ip6tables save
+user@router-andy:~$ sudo cat /etc/iptables/rules.v4
+# Generated by iptables-save v1.8.9 (nf_tables) on Wed Oct 16 14:34:42 2024
+*filter
+:INPUT ACCEPT [3171:473627]
+:FORWARD ACCEPT [554:40430]
+:OUTPUT ACCEPT [2327:341858]
+COMMIT
+# Completed on Wed Oct 16 14:34:42 2024
+# Generated by iptables-save v1.8.9 (nf_tables) on Wed Oct 16 14:34:42 2024
+*nat
+:PREROUTING ACCEPT [602:80941]
+:INPUT ACCEPT [44:6729]
+:OUTPUT ACCEPT [7:427]
+:POSTROUTING ACCEPT [7:427]
+-A PREROUTING -i enp2s0 -p tcp -m tcp --dport 80 -j DNAT --to-destination 192.168.200.33:80
+-A POSTROUTING -s 192.168.200.0/24 -o enp2s0 -j MASQUERADE
+-A POSTROUTING -s 172.16.0.0/24 -o enp2s0 -j MASQUERADE
+COMMIT
+# Completed on Wed Oct 16 14:34:42 2024
+
+```
+
+Hemos configurado el archivo .ssh/config para poder entrar directamente por ssh desde terminal, y ahora comprobaremos la ip, efectivamente nos la de DHCP y salimos al exterior:
+
+```
+madandy@toyota-hilux:~$ ssh otro-cliente 
+Linux otro-cliente 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Wed Oct 16 15:06:21 2024
+debian@otro-cliente:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=12.5 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=13.3 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=13.7 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=116 time=13.7 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 12.535/13.322/13.723/0.478 ms
+debian@otro-cliente:~$ ip -c a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: ens3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:33:a9:dc brd ff:ff:ff:ff:ff:ff
+    altname enp0s3
+    inet 172.16.182.236/16 brd 172.16.255.255 scope global dynamic ens3
+       valid_lft 7sec preferred_lft 7sec
+    inet6 fe80::5054:ff:fe33:a9dc/64 scope link 
+       valid_lft forever preferred_lft forever
+debian@otro-cliente:~$ 
+
+```
