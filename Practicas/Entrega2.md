@@ -407,3 +407,46 @@ debian@cliente3:~$
 
 h2. Instala un cliente web de texto en cliente2 y accede a la página web de servidorWeb.
 
+<pre>
+debian@cliente3:~$ sudo apt install lynx
+Leyendo lista de paquetes... Hecho
+Creando árbol de dependencias... Hecho
+Leyendo la información de estado... Hecho
+Se instalarán los siguientes paquetes adicionales:
+  lynx-common
+Se instalarán los siguientes paquetes NUEVOS:
+  lynx lynx-common
+0 actualizados, 2 nuevos se instalarán, 0 para eliminar y 0 no actualizados.
+Se necesita descargar 1.803 kB de archivos.
+Se utilizarán 5.757 kB de espacio de disco adicional después de esta operación.
+¿Desea continuar? [S/n] s
+Des:1 http://deb.debian.org/debian bookworm/main amd64 lynx-common all 2.9.0dev.12-1 [1.166 kB]
+Des:2 http://deb.debian.org/debian bookworm/main amd64 lynx amd64 2.9.0dev.12-1 [637 kB]
+Descargados 1.803 kB en 0s (5.284 kB/s)
+Seleccionando el paquete lynx-common previamente no seleccionado.
+(Leyendo la base de datos ... 29322 ficheros o directorios instalados actualment
+e.)
+Preparando para desempaquetar .../lynx-common_2.9.0dev.12-1_all.deb ...
+Desempaquetando lynx-common (2.9.0dev.12-1) ...
+Seleccionando el paquete lynx previamente no seleccionado.
+Preparando para desempaquetar .../lynx_2.9.0dev.12-1_amd64.deb ...
+Desempaquetando lynx (2.9.0dev.12-1) ...
+Configurando lynx-common (2.9.0dev.12-1) ...
+Configurando lynx (2.9.0dev.12-1) ...
+update-alternatives: utilizando /usr/bin/lynx para proveer /usr/bin/www-browser 
+(www-browser) en modo automático
+Procesando disparadores para man-db (2.11.2-2) ...
+Procesando disparadores para mailcap (3.70+nmu1) ...
+<pre>
+
+Nos conectamso al servidor Web
+
+</pre>
+debian@cliente3:~$ lynx http://192.168.200.33
+
+
+Exiting via interrupt: 2
+
+</pre>
+
+![cliente](/img/cliente3-lynx.png)
