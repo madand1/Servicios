@@ -521,3 +521,147 @@ echo "Máquina $NOMBRE_MAQUINA creada y en ejecución."
 
 
 ```
+
+# UNa vez que ya hemos hecho el cliente 3 (seria en la practica cliente2, pero ya hice como 20000)
+
+ >[!CAUTION]
+ > eNTRAR EN EL CLIENTE Y HACER UN ```sudo ifup ens3```
+
+ Ahora si paso a seguir:
+
+
+1. Descargaremos lo quew sera el cliente de servicio web
+```
+debian@cliente3:~$ sudo apt install lynx
+Leyendo lista de paquetes... Hecho
+Creando árbol de dependencias... Hecho
+Leyendo la información de estado... Hecho
+Se instalarán los siguientes paquetes adicionales:
+  lynx-common
+Se instalarán los siguientes paquetes NUEVOS:
+  lynx lynx-common
+0 actualizados, 2 nuevos se instalarán, 0 para eliminar y 0 no actualizados.
+Se necesita descargar 1.803 kB de archivos.
+Se utilizarán 5.757 kB de espacio de disco adicional después de esta operación.
+¿Desea continuar? [S/n] s
+Des:1 http://deb.debian.org/debian bookworm/main amd64 lynx-common all 2.9.0dev.12-1 [1.166 kB]
+Des:2 http://deb.debian.org/debian bookworm/main amd64 lynx amd64 2.9.0dev.12-1 [637 kB]
+Descargados 1.803 kB en 0s (5.284 kB/s)
+Seleccionando el paquete lynx-common previamente no seleccionado.
+(Leyendo la base de datos ... 29322 ficheros o directorios instalados actualment
+e.)
+Preparando para desempaquetar .../lynx-common_2.9.0dev.12-1_all.deb ...
+Desempaquetando lynx-common (2.9.0dev.12-1) ...
+Seleccionando el paquete lynx previamente no seleccionado.
+Preparando para desempaquetar .../lynx_2.9.0dev.12-1_amd64.deb ...
+Desempaquetando lynx (2.9.0dev.12-1) ...
+Configurando lynx-common (2.9.0dev.12-1) ...
+Configurando lynx (2.9.0dev.12-1) ...
+update-alternatives: utilizando /usr/bin/lynx para proveer /usr/bin/www-browser 
+(www-browser) en modo automático
+Procesando disparadores para man-db (2.11.2-2) ...
+Procesando disparadores para mailcap (3.70+nmu1) ...
+```
+
+
+Y para que podamos verlo lo que tendremos que hacer es lo siguiente irnos al servidorNAS y servidorWeb, y hacer lo anterior:
+
+
+- Servidor NAS
+
+```
+nas-andy:~$ su -
+Password: 
+su: incorrect password
+nas-andy:~$ su -
+Password: 
+nas-andy:~# exportfs -a
+nas-andy:~# exportfs -v
+/srv/web      	192.168.200.33(sync,wdelay,hide,no_subtree_check,sec=sys,rw,root_squash,no_all_squash)
+nas-andy:~# rc-service nfs start
+ * Starting rpcbind ...                                                                   [ ok ]
+ * Starting NFS statd ...                                                                 [ ok ]
+ * Mounting nfsd filesystem in /proc ...                                                  [ ok ]
+ * Exporting NFS directories ...                                                          [ ok ]
+ * Starting NFS mountd ...                                                                [ ok ]
+ * Starting NFS daemon ...                                                                [ ok ]
+ * Starting NFS smnotify ...                                                              [ ok ]
+nas-andy:~# 
+
+
+```
+
+- Servidor Web
+
+```
+root@servidorWeb:~# ls
+root@servidorWeb:~# cd /var/www/html/index.html 
+-bash: cd: /var/www/html/index.html: Not a directory
+root@servidorWeb:~# cd /var/www/html
+root@servidorWeb:/var/www/html# cd
+root@servidorWeb:~# mount -t nfs 192.168.200.56:/srv/web /var/www/html
+root@servidorWeb:~# 
+
+
+```
+¿Por qué hacemos esto? Porque esto lo tuvimos que hacer seguido y no hara falta pero se tiene que seguir los pasos anteriores, y listo. 
+
+Si queremos editar el fichero lo unico que tendremos que hacer es esto:
+
+```
+nas-andy:~# cd /srv/web/
+nas-andy:/srv/web# lks
+-sh: lks: not found
+nas-andy:/srv/web# ls
+index.html
+nas-andy:/srv/web# nano index.html 
+nas-andy:/srv/web# exportfs -a
+nas-andy:/srv/web# exportfs -v
+/srv/web      	192.168.200.33(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)
+nas-andy:/srv/web# rc-service nfs start
+ * WARNING: nfs has already been started
+nas-andy:/srv/web# rc-service nfs status
+ * status: started
+nas-andy:/srv/web# 
+
+```
+
+```
+root@servidorWeb:~# systemctl status apache2
+● apache2.service - The Apache HTTP Server
+     Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor prese>
+     Active: active (running) since Wed 2024-10-16 10:33:05 UTC; 11min ago
+       Docs: https://httpd.apache.org/docs/2.4/
+    Process: 88 ExecStart=/usr/sbin/apachectl start (code=exited, status=0/SUCC>
+   Main PID: 104 (apache2)
+      Tasks: 55 (limit: 18748)
+     Memory: 20.2M
+        CPU: 100ms
+     CGroup: /system.slice/apache2.service
+             ├─104 /usr/sbin/apache2 -k start
+             ├─105 /usr/sbin/apache2 -k start
+             └─106 /usr/sbin/apache2 -k start
+
+oct 16 10:33:05 servidorWeb systemd[1]: Starting The Apache HTTP Server...
+oct 16 10:33:05 servidorWeb apachectl[102]: AH00557: apache2: apr_sockaddr_info>
+oct 16 10:33:05 servidorWeb apachectl[102]: AH00558: apache2: Could not reliabl>
+oct 16 10:33:05 servidorWeb systemd[1]: Started The Apache HTTP Server.
+
+root@servidorWeb:~# cd
+root@servidorWeb:~# ls
+root@servidorWeb:~# cd /var/www/html/index.html 
+-bash: cd: /var/www/html/index.html: Not a directory
+root@servidorWeb:~# cd /var/www/html
+root@servidorWeb:/var/www/html# cd
+root@servidorWeb:~# mount -t nfs 192.168.200.56:/srv/web /var/www/html
+root@servidorWeb:~# mount -t nfs 192.168.200.56:/srv/web /var/www/html
+root@servidorWeb:~# 
+
+```
+
+vemos que se hace a traves del cliente nos sladra esto por pantalla:
+
+```debian@cliente3:~$ lynx http://192.168.200.33```
+
+
+![cliente](/img/cliente3-lynx.png)
