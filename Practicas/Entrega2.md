@@ -294,3 +294,116 @@ h2. Cambia el contenido del fichero index.html en el servidorNAS y accede a la p
 nas-andy:~# echo "<html><body><h1>For the emperor</h1></body></html>" > /srv/web/index.html
 nas-andy:~# 
 </pre>
+
+
+h1. Script de creación de clientes
+
+h2.. Entrega el script que has diseñado.
+
+<pre>
+
+madandy@toyota-hilux:~/Documentos/SegundoASIR/github/Servicios$ cat crear_clientes.sh 
+#!/bin/bash
+
+# Solicitar al usuario los parámetros
+read -p "Introduce el nombre de la máquina: " NOMBRE_MAQUINA
+read -p "Introduce el tamaño del volumen (ejemplo: 10G): " TAMANO_VOLUMEN
+read -p "Introduce el nombre de la red: " NOMBRE_RED
+
+# Verificar que los valores no estén vacíos
+if [[ -z "$NOMBRE_MAQUINA" || -z "$TAMANO_VOLUMEN" || -z "$NOMBRE_RED" ]]; then
+    echo "Todos los campos son obligatorios."
+    exit 1
+fi
+
+# Ruta de la plantilla y directorio de los discos
+PLANTILLA="/var/lib/libvirt/images/planitilla-practica1-reducida.qcow2"
+DISCO_DIR="/var/lib/libvirt/images"
+
+# Crear el nuevo volumen
+NUEVO_DISCO="${DISCO_DIR}/${NOMBRE_MAQUINA}.qcow2"
+qemu-img create -f qcow2 -b "$PLANTILLA" -F qcow2 "$NUEVO_DISCO" "$TAMANO_VOLUMEN"
+
+# Redimensionar sistema de ficheros
+virt-resize --expand /dev/sda1 "$PLANTILLA" "$NUEVO_DISCO"
+
+# Personalizar la máquina (hostname, claves SSH, red y SSH)
+virt-customize -a "$NUEVO_DISCO" \
+  --hostname "$NOMBRE_MAQUINA" \
+  --ssh-inject debian:file:/home/madandy/.ssh/andy.pub \
+  --run-command 'echo "PermitRootLogin yes" >> /etc/ssh/sshd_config' \
+  --run-command 'ssh-keygen -A' \
+  --run-command 'systemctl enable ssh' \
+  --run-command 'systemctl start ssh' \
+  --run-command 'echo -e "auto ens3\niface ens3 inet dhcp" >> /etc/network/interfaces' \
+  --run-command 'ifup ens3'  # Levantar la interfaz ens3 utilizando ifup
+
+# Crear la máquina virtual con la red y el modelo 'virtio'
+virt-install --connect qemu:///system  \
+  --name "$NOMBRE_MAQUINA" \
+  --ram 2048 \
+  --vcpus 2 \
+  --disk path="$NUEVO_DISCO" \
+  --network network="$NOMBRE_RED",model=virtio \
+  --import \
+  --osinfo detect=on,require=off \
+  --noautoconsole
+
+# Iniciar la máquina virtual automáticamente
+virsh start "$NOMBRE_MAQUINA"
+
+echo "Máquina $NOMBRE_MAQUINA creada y en ejecución."
+
+</pre>
+
+h2. Una comprobación de que el tamaño del disco (y de su sistema de fichero) de la máquina creada es el adecuado.
+
+<pre>
+debian@cliente3:~$ df -h
+S.ficheros     Tamaño Usados  Disp Uso% Montado en
+udev             962M      0  962M   0% /dev
+tmpfs            197M   520K  197M   1% /run
+/dev/sda1        8,9G   1,3G  7,2G  15% /
+tmpfs            984M      0  984M   0% /dev/shm
+tmpfs            5,0M      0  5,0M   0% /run/lock
+tmpfs            197M      0  197M   0% /run/user/1000
+debian@cliente3:~$ 
+
+</pre>
+h2. Una vez creado el cliente2, pruebas de funcionamiento del direccionamiento que ha tomado y de que tiene acceso al exterior.
+
+<pre>
+debian@cliente3:~$ ping 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=18.4 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=18.2 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=17.9 ms
+^C
+--- 8.8.8.8 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2004ms
+rtt min/avg/max/mdev = 17.945/18.167/18.394/0.183 ms
+debian@cliente3:~$ 
+
+</pre>
+
+h2. Un acceso por ssh a cliente2 donde se demuestre que no se pide contraseña.
+
+<pre>
+
+madandy@toyota-hilux:~$ ssh cliente3
+Linux cliente3 6.1.0-25-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.106-3 (2024-08-26) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Wed Oct 16 09:34:52 2024 from 192.168.200.1
+debian@cliente3:~$ 
+
+</pre>
+
+
+h2. Instala un cliente web de texto en cliente2 y accede a la página web de servidorWeb.
+
