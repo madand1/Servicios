@@ -192,7 +192,7 @@ vdd    254:48   0    2G  0 disk
 
 Para esta parte nos esta pidiendo lo siguiente el ejercicio:
 
-![Escenario](/img/image.png)
+![Escenario](/practica_3/img/image.png)
 
 Es lo que teniamos anteriormente montado, pero ahora lo vemos en imagen que será mil veces mejor.
 
