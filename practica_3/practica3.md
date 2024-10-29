@@ -203,3 +203,39 @@ cd Servicios/practica_3
 mkdir -p ansible-playbook/{roles/{commons,router,redinterna,web,mariadb}/{tasks,templates,files},group_vars}
 touch ansible-playbook/{hosts.ini,playbook.yml,vars.yml}
 ```
+Estructura de la práctica se quedaría de la siguiente manera:
+
+# Estructura del Proyecto
+
+```plaintext
+Servicios/practica_3/
+├── Vagrantfile                          # Archivo de configuración de Vagrant para el entorno virtual
+├── practica3.md                         # Documentación o instrucciones de la práctica
+└── ansible-playbook/                    # Directorio principal del playbook de Ansible
+    ├── hosts.ini                        # Inventario de hosts para Ansible
+    ├── playbook.yml                     # Playbook principal
+    ├── vars.yml                         # Variables globales de configuración
+    ├── group_vars/
+    │   └── all.yml                      # Variables comunes a todos los nodos
+    └── roles/                           # Directorio que contiene los roles de Ansible
+        ├── commons/                     # Rol "commons" para configuraciones generales
+        │   └── tasks/
+        │       └── main.yml             # Tareas comunes para todos los nodos
+        ├── router/                      # Rol "router" para configurar el nodo de enrutamiento
+        │   └── tasks/
+        │       └── main.yml             # Tareas específicas para configurar el router
+        ├── redinterna/                  # Rol "redinterna" para la configuración de la red aislada
+        │   └── tasks/
+        │       └── main.yml             # Tareas para configurar la red privada
+        ├── web/                         # Rol "web" para configurar el servidor web
+        │   ├── tasks/
+        │   │   └── main.yml             # Tareas específicas para el servidor web
+        │   ├── templates/
+        │   │   └── vhost.conf.j2        # Plantilla para el VirtualHost de Apache
+        │   └── files/
+        │       └── index.html           # Página web estática para el DocumentRoot
+        └── mariadb/                     # Rol "mariadb" para la configuración de MariaDB
+            └── tasks/
+                └── main.yml             # Tareas específicas para configurar MariaDB
+```
+
