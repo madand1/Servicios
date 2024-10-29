@@ -188,3 +188,24 @@ vdc    254:32   0    2G  0 disk
 vdd    254:48   0    2G  0 disk 
 
 ```
+# Práctica (2 / 3): Creación y configuración de un servidor LAMP
+
+Para esta parte nos esta pidiendo lo siguiente el ejercicio:
+
+![Escenario](/img/image.png)
+
+Es lo que teniamos anteriormente montado, pero ahora lo vemos en imagen que será mil veces mejor.
+
+Y con lo que nos centraremos en lo que nos pide, para ello lo primero que haremos será la creación de todas las carpetas , y archivos necesarios:
+
+```
+cd Servicios/practica_3
+mkdir -p ansible-playbook/{roles/{commons,router,redinterna,web,mariadb}/{tasks,templates,files},group_vars}
+touch ansible-playbook/{hosts.ini,playbook.yml,vars.yml}
+```
+
+Con lo que se nos quedará un esqueleto de la siguiente manera:
+
+```
+
+```
