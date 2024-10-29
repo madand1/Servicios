@@ -203,9 +203,3 @@ cd Servicios/practica_3
 mkdir -p ansible-playbook/{roles/{commons,router,redinterna,web,mariadb}/{tasks,templates,files},group_vars}
 touch ansible-playbook/{hosts.ini,playbook.yml,vars.yml}
 ```
-
-Con lo que se nos quedará un esqueleto de la siguiente manera:
-
-```
-
-```
