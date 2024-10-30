@@ -1,0 +1,7 @@
+#Variables
+router_ip_eth0: "192.168.121.61"  # IP de eth0 para la máquina router en la red de mantenimiento
+web_ip_eth0: "192.168.121.53"     # IP de eth0 para la máquina web en la red de mantenimiento
+bd_ip_eth0: "192.168.121.96"      # IP de eth0 para la máquina bd en la red de mantenimiento
+san_ip_eth0: "192.168.121.229"     # IP de eth0 para la máquina san en la red de mantenimiento
+
+

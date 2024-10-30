@@ -1,0 +1,35 @@
+- name: Instalar MariaDB
+  apt:
+    name: mariadb-server
+    state: present
+
+- name: Instalar dependencias para MySQL
+  apt:
+    name:
+      - python3-mysqldb
+      - python3-dev
+      - default-libmysqlclient-dev
+    state: present
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Asegurarse de que MariaDB esté en ejecución
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Configurar base de datos
+  mysql_db:
+    name: "{{ db_name }}"
+    state: present
+  notify: Reiniciar MariaDB
+
+- name: Crear usuario y otorgar permisos
+  mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    host: "%"
+    state: present
+  notify: Reiniciar MariaDB

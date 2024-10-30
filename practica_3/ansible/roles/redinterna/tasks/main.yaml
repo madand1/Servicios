@@ -1,0 +1,7 @@
+- name: Eliminar ruta por defecto si existe
+  command: ip route del default
+  ignore_errors: yes
+
+- name: Cambiar la ruta por defecto
+  command: ip route add default via 10.0.0.1
+

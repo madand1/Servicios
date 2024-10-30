@@ -1,0 +1,4 @@
+- name: Reiniciar iptables
+  service:
+    name: netfilter-persistent  # Asegúrate de usar el nombre correcto del servicio
+    state: restarted

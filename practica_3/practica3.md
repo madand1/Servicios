@@ -211,7 +211,7 @@ Estructura de la práctica se quedaría de la siguiente manera:
 Servicios/practica_3/
 ├── Vagrantfile                          # Archivo de configuración de Vagrant para el entorno virtual
 ├── practica3.md                         # Documentación o instrucciones de la práctica
-└── ansible-playbook/                    # Directorio principal del playbook de Ansible
+└── ansible/                    # Directorio principal del playbook de Ansible
     ├── hosts.ini                        # Inventario de hosts para Ansible
     ├── playbook.yml                     # Playbook principal
     ├── vars.yml                         # Variables globales de configuración
@@ -239,3 +239,104 @@ Servicios/practica_3/
                 └── main.yml             # Tareas específicas para configurar MariaDB
 ```
 
+Una vez teniendo la estructura, esta no es la definitiva (la pondre más tarde), lo que haremos será ponerla en su lugar cada elemento y para esto lo vamso a ir desglosando y para que sirve cada una de las cosas, ¿entendido?
+
+1. Primero que tenemos que tener en cuenta es lo siguiente:
+
+- La máquina accede a internet por la interfaz conectada a br0.
+
+>[!CAUTION]
+El br0 cambiara depende de donde trabajemos, por lo que en el router tendremso que cambiar a donde a pumnta su ruta con el siguiente comando:
+
+```sudo ip route add default via <ip-br0-host>```
+
+Una vez hecho esto hacemos la comprobación de que todos nuestro escenario tiene conexión a internet.
+
+A lo mejor nuestro iptables **no se guardaron** no se sabe el porque, por lo que al tenerlo en la receta, se encuentra alojado aqui:
+
+```ansible/roles/router/tasks/main.yaml```
+
+y tendremos que hacer la comprobación con el comando:
+
+```sudo iptables -t nat -L -v```
+
+2. Una vez hecho esto lo que haremos sera la configuracion de nuestra receta de ansible, de la siguiente manera:
+
+- Router:
+- Web
+- mariadb
+- san
+En cada uno tendremos que irnos al apartado *tasks* y poner lo que necesitamos en este momento, o nos pide el ejercicio.
+
+## Respuestas:
+
+1. Entrega los ficheros de ansible que has generado, comprimidos en un zip.
+
+2. Entrada captura de pantalla accediendo a alguna máquina interna sin usar vagrant ssh.
+
+3. Entrega capturas de pantalla donde se vean las puertas de enlaces de los equipos de la red interna.
+   
+4. Entrega capturas de pantalla donde se vean las máquinas haciendo ping al exterior.
+
+5. Entrega una captura de pantalla donde se vea un acceso a la página web alojada en la máquina web accediendo a practica-tunombre.dominio.algo. Entrega la línea de tu resolución estática en tu cliente para que funcione.
+Para que se pueda ver la web desde fuera, lo quye tendremos que hacer es poner en nuestro archivo de configuracióbn */etc/hosts* y en el cual tendremo que poner la ip de eth1 del router, con el nombre que esta puesto en el fichero *vars/main.yaml* de web
+```
+madandy@toyota-hilux:~$ cat /etc/hosts
+127.0.0.1	localhost
+127.0.1.1	toyota-hilux
+172.22.8.205	biblioteca.andres.org
+172.22.123.100    openstack.gonzalonazareno.org
+172.22.201.196    www.sad.com
+192.168.1.165   practica-belphumbattlemoon.site 	
+#192.168.122.138	www.example.org
+#192.168.122.138 www.iesgn.com
+#192.168.122.138 www.departamentos.com
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+madandy@toyota-hilux:~$ 
+
+
+```
+
+Y se veria de la siguiente manera:
+
+![Rayo Mcqueen](img/image_apache.png)
+
+6. Entrega la instrucción y una prueba de funcionamiento para realizar una conexión desde la máquina web a la base de datos creada, usando el nombre bd-tunombre.dominio.algo.
+
+Para esto lo que haremos sera habilitar el cliente remoto den mysql, para eso os dejo este link, y haremos lo siguiente:
+
+- En el servidor web, tendremos que entrar en /etc/host y poner lo siguiente:
+
+```
+vagrant@web:~$ mysql -u usuario -p -h bd-andresmorales.site practica1
+
+```
+
+Con lo que tendremos esta respuesta por pantalla:
+
+```
+vagrant@web:~$ mysql -u usuario -p -h bd-andresmorales.site practica1
+Enter password: 
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 31
+Server version: 10.11.6-MariaDB-0+deb12u1 Debian 12
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+MariaDB [practica1]> ^DBye
+
+```
+
+- Hemos podido entrar ya que si nos vamos a la estructura, y analizamos lo que es , el fichero */vars/main.yaml* pusimos lo siguiente que fue la creación tanto del usuario como de la base de datos que se usara:
+
+```
+db_name: practica1
+db_user: usuario
+db_password: usuario
+
+```

@@ -1,0 +1,2 @@
+public_ip: 192.168.1.165
+internal_network: 10.0.0.0/24

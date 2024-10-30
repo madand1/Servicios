@@ -1,0 +1,37 @@
+---
+- name: Configurar el escenario LAMP
+  hosts: all
+  become: true
+  vars:
+    # Direcciones IP y nombres de interfaces para el enrutamiento y DNAT
+    internet_interface: eth1  # Interfaz pública
+    internal_network: "red_intra"
+    private_data_network: "red_datos"
+
+  roles:
+    - commons
+
+- name: Configuración del router
+  hosts: router
+  become: true
+  roles:
+    - router
+
+- name: Configuración de la red interna
+  hosts: san, bd, web
+  become: true
+  roles:
+    - redinterna
+
+- name: Configuración del servidor web
+  hosts: web
+  become: true
+  roles:
+    - web
+
+- name: Configuración de la base de datos
+  hosts: bd
+  become: true
+  roles:
+    - mariadb
+

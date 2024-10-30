@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
 
     config.vm.define :bd do |bd|
       bd.vm.box = "debian/bookworm64" 
-      bd.vm.hostname = "web" 
+      bd.vm.hostname = "bd" 
       bd.vm.synced_folder ".", "/vagrant", disabled: true
       bd.vm.network :private_network,
         :libvirt__network_name => "red_intra",

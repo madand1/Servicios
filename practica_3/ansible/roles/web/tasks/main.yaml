@@ -1,0 +1,43 @@
+- name: Instalar Apache
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+
+- name: Crear el DocumentRoot
+  file:
+    path: "{{ document_root }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Copiar la página estática al DocumentRoot
+  copy:
+    src: index.html
+    dest: "{{ document_root }}/index.html"
+
+- name: Configurar el VirtualHost
+  template:
+    src: index.j2
+    dest: /etc/apache2/sites-available/{{ virtual_host_name }}.conf
+  notify:
+    - Reiniciar Apache
+
+- name: Activar el VirtualHost
+  command: a2ensite {{ virtual_host_name }}
+  notify:
+    - Reiniciar Apache
+
+- name: Activar módulo rewrite
+  command: a2enmod rewrite
+  notify:
+    - Reiniciar Apache
+
+- name: "Copiar fichero de configuración y reiniciar el servicio"
+  copy:
+    src: etc/apache2/ports.conf
+    dest: /etc/apache2/ports.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reiniciar Apache
