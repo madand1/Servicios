@@ -18,7 +18,7 @@
     - router
 
 - name: Configuración de la red interna
-  hosts: san, bd, web
+  hosts: san, bd, web, cliente1
   become: true
   roles:
     - redinterna

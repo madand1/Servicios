@@ -273,10 +273,222 @@ En cada uno tendremos que irnos al apartado *tasks* y poner lo que necesitamos e
 1. Entrega los ficheros de ansible que has generado, comprimidos en un zip.
 
 2. Entrada captura de pantalla accediendo a alguna máquina interna sin usar vagrant ssh.
+Para hacer esto lo que tendremos que hacer es asegurarnos de que la ip de br0 este bien en nuestro router, esto puede ser un coñazo si estamos trabajando desde 2 sitios, distintos:
+
+Para que entremos por ssh, sin necesidad de *vagrant ssh <nombre>*, lo que tendremos que hacer es editar el siguiente fichero *.ssh/config*, pondremos lo siguiente:
+
+```
+madandy@toyota-hilux:~$ cat .ssh/config 
+Host router
+  HostName  172.22.6.32
+  User vagrant
+  ForwardAgent yes
+
+Host web
+  HostName 10.0.0.2
+  User vagrant
+  ForwardAgent yes
+  ProxyJump router
+
+Host bd
+  HostName 10.0.0.3
+  User vagrant
+  ForwardAgent yes
+  ProxyJump router
+
+Host san
+  HostName 10.0.0.4
+  User vagrant
+  ForwardAgent yes
+  ProxyJump router
+madandy@toyota-hilux:~$ 
+
+
+```
+
+Y ahora comprobamos si es posible entrar a nuestros dispositivos:
+
+- ssh a router
+  
+```
+madandy@toyota-hilux:~$ ssh router 
+The authenticity of host '172.22.6.32 (172.22.6.32)' can't be established.
+ED25519 key fingerprint is SHA256:fXHi1m3USJfeiGXHjldsRb2dtWtiyHwWy8WEmoYu2wA.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:155: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? ys
+Please type 'yes', 'no' or the fingerprint: yes
+Warning: Permanently added '172.22.6.32' (ED25519) to the list of known hosts.
+Linux router 6.1.0-26-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-09-30) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Oct 31 09:51:05 2024 from 192.168.121.1
+vagrant@router:~$ 
+
+
+```
+
+- shhh a san 
+
+```
+madandy@toyota-hilux:~/Documentos/SegundoASIR/github/Servicios/practica_3$ ssh san 
+The authenticity of host '10.0.0.4 (<no hostip for proxy command>)' can't be established.
+ED25519 key fingerprint is SHA256:cFLA07xKEcFs0ZBW3bWGQzf7w4TULRha2X+F2C4aTMA.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:157: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.0.4' (ED25519) to the list of known hosts.
+Linux san 6.1.0-26-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-09-30) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Wed Oct 30 17:05:28 2024 from 192.168.121.1
+vagrant@san:~$ 
+
+```
+
+- ssh a bd
+
+```
+madandy@toyota-hilux:~$ ssh bd
+The authenticity of host '10.0.0.3 (<no hostip for proxy command>)' can't be established.
+ED25519 key fingerprint is SHA256:5gINUBgG0pudGJF6Rh/8av6fvnKjVW8EdzvA+qwNdIE.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:156: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.0.3' (ED25519) to the list of known hosts.
+Linux bd 6.1.0-26-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-09-30) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Wed Oct 30 17:05:33 2024 from 192.168.121.1
+vagrant@bd:~$ 
+
+```
+
+- shh a web
+
+```
+madandy@toyota-hilux:~$ ssh web 
+The authenticity of host '10.0.0.2 (<no hostip for proxy command>)' can't be established.
+ED25519 key fingerprint is SHA256:+pagEVvT76ld25qqDe3clsVC+XTjIX6IeLYljdT9+Oc.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:153: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '10.0.0.2' (ED25519) to the list of known hosts.
+Linux web 6.1.0-26-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.1.112-1 (2024-09-30) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Thu Oct 31 09:56:52 2024 from 192.168.121.1
+vagrant@web:~$ 
+
+```
+
 
 3. Entrega capturas de pantalla donde se vean las puertas de enlaces de los equipos de la red interna.
-   
+
+Puertas de enlaces de la red interna, es decir, *maquina web, san y bd*   
+
+- bd 
+
+```
+vagrant@bd:~$ ip route 
+default via 10.0.0.1 dev eth1 
+10.0.0.0/24 dev eth1 proto kernel scope link src 10.0.0.3 
+20.0.0.0/24 dev eth2 proto kernel scope link src 20.0.0.3 
+192.168.121.0/24 
+```
+
+- san 
+
+```
+vagrant@san:~$ ip route 
+default via 10.0.0.1 dev eth1 
+10.0.0.0/24 dev eth1 proto kernel scope link src 10.0.0.4 
+20.0.0.0/24 dev eth2 proto kernel scope link src 20.0.0.4 
+192.168.121.0/24 dev eth0 proto kernel scope link src 192.168.121.229 
+```
+
+- web
+
+```
+vagrant@web:~$ ip route 
+default via 10.0.0.1 dev eth1 
+10.0.0.0/24 dev eth1 proto kernel scope link src 10.0.0.2 
+20.0.0.0/24 dev eth2 proto kernel scope link src 20.0.0.2 
+192.168.121.0/24 dev eth0 proto kernel scope link src 192.168.121.53 
+
+```
+
 4. Entrega capturas de pantalla donde se vean las máquinas haciendo ping al exterior.
+
+- bd 
+
+```
+vagrant@bd:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=109 time=10.5 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=109 time=12.4 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=109 time=11.7 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=109 time=10.5 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 10.454/11.262/12.387/0.813 ms
+
+```
+
+- san 
+
+```
+vagrant@san:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=20.0 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=20.7 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=19.7 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=110 time=19.6 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 19.561/19.998/20.703/0.442 ms
+
+```
+
+- web
+
+```
+vagrant@web:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=56.2 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=20.5 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=20.1 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=110 time=19.8 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 19.820/29.165/56.155/15.584 ms
+
+
+```
+
 
 5. Entrega una captura de pantalla donde se vea un acceso a la página web alojada en la máquina web accediendo a practica-tunombre.dominio.algo. Entrega la línea de tu resolución estática en tu cliente para que funcione.
 Para que se pueda ver la web desde fuera, lo quye tendremos que hacer es poner en nuestro archivo de configuracióbn */etc/hosts* y en el cual tendremo que poner la ip de eth1 del router, con el nombre que esta puesto en el fichero *vars/main.yaml* de web
@@ -338,5 +550,75 @@ MariaDB [practica1]> ^DBye
 db_name: practica1
 db_user: usuario
 db_password: usuario
+
+```
+
+7. Añade un nueva máquina llamada cliente conectada a la red_intra, configura el inventario de ansible y vuelve a pasar la receta para que esta máquina tenga acceso a internet.
+
+Ruta:
+
+```
+vagrant@cliente1:~$ ip r
+default via 10.0.0.1 dev eth1 
+10.0.0.0/24 dev eth1 proto kernel scope link src 10.0.0.5 
+192.168.121.0/24 dev eth0 proto kernel scope link src 192.168.121.118 
+vagrant@cliente1:~$ 
+
+```
+
+salida a internet:
+
+```
+vagrant@cliente1:~$ ping -c 4 8.8.8.8
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=110 time=19.7 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=110 time=20.5 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=110 time=21.2 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=110 time=20.2 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+
+```
+Conexion a la puerta de enlace:
+
+```
+vagrant@cliente1:~$ ping 10.0.0.1
+PING 10.0.0.1 (10.0.0.1) 56(84) bytes of data.
+64 bytes from 10.0.0.1: icmp_seq=1 ttl=64 time=0.539 ms
+64 bytes from 10.0.0.1: icmp_seq=2 ttl=64 time=1.05 ms
+64 bytes from 10.0.0.1: icmp_seq=3 ttl=64 time=1.22 ms
+
+--- 10.0.0.1 ping statistics ---
+3 packets transmitted, 3 received, 0% packet loss, time 2012ms
+rtt min/avg/max/mdev = 0.539/0.934/1.217/0.287 ms
+
+```
+Configuracion de ip
+
+```
+vagrant@cliente1:~$ ip a
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:cf:37:3d brd ff:ff:ff:ff:ff:ff
+    altname enp0s5
+    altname ens5
+    inet 192.168.121.118/24 brd 192.168.121.255 scope global dynamic eth0
+       valid_lft 2405sec preferred_lft 2405sec
+    inet6 fe80::5054:ff:fecf:373d/64 scope link 
+       valid_lft forever preferred_lft forever
+3: eth1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 52:54:00:2e:5e:5d brd ff:ff:ff:ff:ff:ff
+    altname enp0s6
+    altname ens6
+    inet 10.0.0.5/24 brd 10.0.0.255 scope global eth1
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe2e:5e5d/64 scope link 
+       valid_lft forever preferred_lft forever
 
 ```

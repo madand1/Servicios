@@ -28,3 +28,11 @@ all:
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/san/libvirt/private_key
 
+    cliente1:
+      hosts:
+        cliente1:
+          ansible_ssh_host: "{{ cliente1_ip_eth0 }}"
+          ansible_ssh_user: vagrant
+          ansible_ssh_private_key_file: ../.vagrant/machines/cliente1/libvirt/private_key
+
+

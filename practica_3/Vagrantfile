@@ -67,4 +67,14 @@ Vagrant.configure("2") do |config|
         libvirt.storage :file, :size => '2G'
       end
     end
+      config.vm.define :cliente1 do |cliente1|
+        cliente1.vm.box = "debian/bookworm64" 
+        cliente1.vm.hostname = "cliente1" 
+        cliente1.vm.synced_folder ".", "/vagrant", disabled: true
+        cliente1.vm.network :private_network,
+          :libvirt__network_name => "red_intra",
+          :libvirt__dhcp_enabled => false,
+          :ip => "10.0.0.5",
+          :libvirt__forward_mode => "veryisolated" 
+    end
   end
