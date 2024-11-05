@@ -1,9 +1,0 @@
-- name: Actualizar todos los paquetes
-  apt: update_cache=yes upgrade=yes
-  
-- name: Copiar la clave pública
-  authorized_key:
-    user: vagrant
-    state: present
-    key: "{{ lookup('file', '~/.ssh/andy.pub') }}"
-

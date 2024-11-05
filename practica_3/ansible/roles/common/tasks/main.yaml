@@ -1,0 +1,8 @@
+- name: Comprueba que el sistema esta actualizado
+  apt: update_cache=yes upgrade=yes
+
+- name: Introduce la clave publica desde un fichero
+  authorized_key:
+    user: vagrant
+    state: present
+    key: "{{ lookup('file', '/home/madandy/.ssh/andy.pub') }}"

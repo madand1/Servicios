@@ -1,7 +1,29 @@
-#Variables
-router_ip_eth0: "192.168.121.61"  # IP de eth0 para la máquina router en la red de mantenimiento
-web_ip_eth0: "192.168.121.53"     # IP de eth0 para la máquina web en la red de mantenimiento
-bd_ip_eth0: "192.168.121.96"      # IP de eth0 para la máquina bd en la red de mantenimiento
-san_ip_eth0: "192.168.121.20"     # IP de eth0 para la máquina san en la red de mantenimiento
-cliente1_ip_eth0: "192.168.121.118" #Ip del cliente 1 en eth0
+router_ip: 192.168.121.166
+web_ip: 192.168.121.157
+bd_ip: 192.168.121.47
+san_ip: 192.168.121.193
+cliente_ip: 192.168.121.21
 
+# Direcciones privadas
+
+ip_interna_local: 10.0.0.0
+ip_interna_router: 10.0.0.1
+ip_interna_web: 10.0.0.2
+ip_interna_bd: 10.0.0.3
+ip_interna_san: 10.0.0.4
+
+#Puerta de enlace
+gateway_internet_router: 192.168.1.132 
+public_interface: eth1
+
+
+ip_reddatos_web: 20.0.0.2
+ip_reddatos_bd: 20.0.0.3
+mascara_larga: 255.255.255.0
+ip_reddatos_san: 20.0.0.4
+
+# Variables para WordPress
+wp_db_name: wordpress
+wp_db_user: wpuser
+wp_db_password: wppassword
+wp_db_host: bd.andy.com

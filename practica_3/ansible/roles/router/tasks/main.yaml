@@ -1,45 +1,48 @@
-- name: Instalar paquetes necesarios
-  apt:
-    name:
-      - iptables
-      - net-tools
-      - dnsutils
-      - iptables-persistent
-    state: present
+- name: Eliminar ruta por defecto existente en el router
+  command: ip route delete default
+  ignore_errors: yes
 
-- name: Habilitar el reenvío de IP
-  sysctl:
+- name: Añadir nueva ruta por defecto en el router
+  command: ip route add default via {{ gateway_internet_router }} dev {{ public_interface }}
+
+- name: Cambiar el bit de forward a 1
+  ansible.posix.sysctl:
     name: net.ipv4.ip_forward
-    value: 1
+    value: '1'
+    sysctl_set: yes
     state: present
     reload: yes
 
-- name: Configurar SNAT
-  command: iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
-  notify:
-    - Reiniciar iptables
+- name: Limpiar reglas de iptables existentes
+  iptables:
+    flush: yes
+    table: "{{ item }}"
+  loop:
+    - filter
+    - nat
+    - mangle
+  become: yes
 
-- name: Configurar DNAT
-  command: iptables -t nat -A PREROUTING -p tcp -d {{ public_ip }} --dport 80 -j DNAT --to-destination 10.0.0.2:80
-  notify:
-    - Reiniciar iptables
+- name: Configurar DNAT para el servidor web
+  iptables:
+    table: nat
+    chain: PREROUTING
+    in_interface: "{{ public_interface }}"
+    protocol: tcp
+    destination_port: 80
+    jump: DNAT
+    to_destination: "{{ ip_interna_web }}:80"
+  become: yes
+
+- name: Configurar SNAT para la red interna
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    out_interface: "{{ public_interface }}"
+    source: "{{ ip_interna_local }}/24"
+    jump: MASQUERADE
+  become: yes
 
 - name: Guardar reglas de iptables
-  shell: iptables-save
-  register: iptables_rules
-
-- name: Escribir reglas en archivo
-  copy:
-    content: "{{ iptables_rules.stdout }}"
-    dest: /etc/iptables/rules.v4
-    mode: '0644'
-  notify: Reiniciar iptables
-
-- name: Eliminar la ruta existente (si existe)
-  command: ip route del 10.0.0.0/24
-  ignore_errors: yes
-
-- name: Configurar rutas para la red interna
-  command: ip route add 10.0.0.0/24 via 10.0.0.1
-
-
+  shell: iptables-save > /etc/iptables/rules.v4
+  become: yes

@@ -1,37 +1,35 @@
----
-- name: Configurar el escenario LAMP
-  hosts: all
+- name: Configuración de la red interna
+  hosts: web, bd, san, cliente1
   become: true
-  vars:
-    # Direcciones IP y nombres de interfaces para el enrutamiento y DNAT
-    internet_interface: eth1  # Interfaz pública
-    internal_network: "red_intra"
-    private_data_network: "red_datos"
-
   roles:
-    - commons
+    - role: redinterna
 
 - name: Configuración del router
   hosts: router
   become: true
   roles:
-    - router
+    - role: router
 
-- name: Configuración de la red interna
-  hosts: san, bd, web, cliente1
+- name: Configurar el escenario LAMP
+  hosts: all
   become: true
   roles:
-    - redinterna
+    - role: common
 
-- name: Configuración del servidor web
+- name: Configuracion del servidor web 
   hosts: web
   become: true
   roles:
-    - web
+    - role: web
+    - role: wordpress
+  vars:
+    wp_db_name: wordpress
+    wp_db_user: wpuser
+    wp_db_password: wppassword
+    wp_db_host: bd.andy.com
 
 - name: Configuración de la base de datos
   hosts: bd
   become: true
   roles:
-    - mariadb
-
+    - role: bd

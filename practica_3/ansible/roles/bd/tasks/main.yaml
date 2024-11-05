@@ -1,0 +1,42 @@
+- name: "Install MariaDB"
+  apt:
+    pkg:
+      - mariadb-server
+      - python3-mysqldb
+
+- name: "Crear la base da datos"
+  mysql_db:
+    name: pablomartin
+    state: present
+
+- name: "Crear el usuario"
+  mysql_user:
+    name: pablomartin
+    password: pablomartin
+    priv: '*.*:ALL'
+    host: '%'
+
+- name: "Configuramos el bind address"
+  lineinfile:
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+    state: present
+
+- name: "Reiniciamos el servicio de MariaDB "
+  service:
+    name: mariadb
+    state: restarted
+
+- name: Crear base de datos WordPress
+  mysql_db:
+    name: "{{ wp_db_name }}"
+    state: present
+
+- name: Crear usuario WordPress
+  mysql_user:
+    name: "{{ wp_db_user }}"
+    password: "{{ wp_db_password }}"
+    priv: "{{ wp_db_name }}.*:ALL"
+    host: '%'
+    state: present

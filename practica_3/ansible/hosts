@@ -1,38 +1,26 @@
 all:
   children:
-    router:
+    routers:
       hosts:
         router:
-          ansible_ssh_host: "{{ router_ip_eth0 }}"
+          ansible_ssh_host: "{{router_ip}}"
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/router/libvirt/private_key
-
-    web:
+    red_interna:
       hosts:
         web:
-          ansible_ssh_host: "{{ web_ip_eth0 }}"
+          ansible_ssh_host: "{{web_ip}}"
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/web/libvirt/private_key
-
-    bd:
-      hosts:
         bd:
-          ansible_ssh_host: "{{ bd_ip_eth0 }}"
+          ansible_ssh_host: "{{bd_ip}}"
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/bd/libvirt/private_key
-
-    san:
-      hosts:
         san:
-          ansible_ssh_host: "{{ san_ip_eth0 }}"
+          ansible_ssh_host: "{{san_ip}}"
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/san/libvirt/private_key
-
-    cliente1:
-      hosts:
         cliente1:
-          ansible_ssh_host: "{{ cliente1_ip_eth0 }}"
+          ansible_ssh_host: "{{cliente_ip}}"
           ansible_ssh_user: vagrant
           ansible_ssh_private_key_file: ../.vagrant/machines/cliente1/libvirt/private_key
-
-
