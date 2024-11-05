@@ -13,7 +13,8 @@ ip_interna_bd: 10.0.0.3
 ip_interna_san: 10.0.0.4
 
 #Puerta de enlace
-gateway_internet_router: 192.168.1.132 
+
+gateway_internet_router: 192.168.1.132 #Es el br0 de mi casa, en el aula lo tendremso que cambiar
 public_interface: eth1
 
 
