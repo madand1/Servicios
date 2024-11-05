@@ -6,13 +6,13 @@
 
 - name: "Crear la base da datos"
   mysql_db:
-    name: pablomartin
+    name: practica
     state: present
 
 - name: "Crear el usuario"
   mysql_user:
-    name: pablomartin
-    password: pablomartin
+    name: usuario
+    password: usuario
     priv: '*.*:ALL'
     host: '%'
 
