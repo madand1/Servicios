@@ -1,0 +1,1 @@
+# Práctica (1 / 2): Escenario en OpenStack
