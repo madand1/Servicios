@@ -1,6 +1,13 @@
 - name: Eliminar ruta por defecto existente
-  command: ip route del default
-  ignore_errors: yes
+  lineinfile:
+    path: /etc/network/interfaces
+    regexp: '^\s*post-up ip route add default.*'
+    state: absent
 
-- name: Configurar nueva ruta por defecto
-  command: ip route add default via {{ ip_interna_router }} dev eth1
+- name: Añadir nueva ruta por defecto
+  lineinfile:
+    path: /etc/network/interfaces
+    insertafter: '^\s*post-up ip route del default.*'
+    line: '    post-up ip route add default via {{ip_interna_router}} dev eth1'
+    state: present
+

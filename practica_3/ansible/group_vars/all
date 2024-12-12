@@ -1,8 +1,8 @@
 router_ip: 192.168.121.166
 web_ip: 192.168.121.157
 bd_ip: 192.168.121.47
-san_ip: 192.168.121.193
-cliente_ip: 192.168.121.21
+san_ip: 192.168.121.209
+cliente_ip: 192.168.121.240
 
 # Direcciones privadas
 
@@ -14,9 +14,13 @@ ip_interna_san: 10.0.0.4
 
 #Puerta de enlace
 
-gateway_internet_router: 192.168.1.132 #Es el br0 de mi casa, en el aula lo tendremso que cambiar
+#gateway_internet_router: 192.168.1.132 #Es el br0 de mi casa, en el aula lo tendremso que cambiar
+
+gateway_internet_router: 172.22.12.34 #Es el br0 de mi aula de trabajo
+
 public_interface: eth1
 
+# Red de datos 
 
 ip_reddatos_web: 20.0.0.2
 ip_reddatos_bd: 20.0.0.3

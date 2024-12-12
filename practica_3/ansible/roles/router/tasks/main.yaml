@@ -1,10 +1,21 @@
-- name: Eliminar ruta por defecto existente en el router
-  command: ip route delete default
-  ignore_errors: yes
+- name: Eliminar ruta por defecto existente
+  lineinfile:
+    path: /etc/network/interfaces
+    regexp: '^\s*post-up ip route add default.*'
+    state: absent
 
-- name: Añadir nueva ruta por defecto en el router
-  command: ip route add default via {{ gateway_internet_router }} dev {{ public_interface }}
+- name: Añadir nueva ruta por defecto
+  lineinfile:
+    path: /etc/network/interfaces
+    insertafter: '^\s*post-up ip route del default.*'
+    line: '    post-up ip route add default via {{ gateway_internet_router }} dev eth1'
+    state: present
 
+- name: Reiniciar networking
+  systemd:
+    name: networking
+    state: restarted
+    
 - name: Cambiar el bit de forward a 1
   ansible.posix.sysctl:
     name: net.ipv4.ip_forward

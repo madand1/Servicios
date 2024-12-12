@@ -4,7 +4,7 @@
       - mariadb-server
       - python3-mysqldb
 
-- name: "Crear la base da datos"
+- name: "Crear la base de datos"
   mysql_db:
     name: practica
     state: present
