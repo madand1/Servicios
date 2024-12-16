@@ -1109,3 +1109,546 @@ PING luffy.andy.gonzalonazareno.org (172.16.1.1) 56(84) bytes of data.
 rtt min/avg/max/mdev = 0.204/0.504/0.673/0.212 ms
 
 ```
+# Práctica (2 / 2): Escenario en OpenStack
+## Instalación de los contenedores
+
+En **Máquina1 (luffy)** vamos a crear dos contenedores en una red interna, por lo que haremos lo siguiente:
+
+- Crea en **máquina1 (luffy)** un linux bridge llamado ```br-intra``` (no lo hagas con virsh ya que se configura una reglas de cortafuego muy estrictas) y asigna una dirección **IP estática** ```192.168.0.1```. Esta será la IP de **máquina1 (luffy)** conectada a este switch virtual y será la puerta de enlace de los contenedores. 
+
+  - Instalamos el paquete **bridge-utils** y **qemu-kvm** para qcrear el bridge.
+
+    - Dentro de la máquina **luffy** tendremos que hacer lo siguiente:
+
+
+```
+andy@luffy:~$ sudo apt install bridge-utils -y
+andy@luffy:~$ sudo nano /etc/netplan/50-cloud-init.yaml 
+
+```
+
+Y dentro del fichero **50-cloud-init.yaml**, pondremos lo siguiente(esto se pondra al final del fichero):
+
+```
+network:
+  version: 2
+  ethernets:
+    ens3:
+      dhcp4: true
+      match:
+        macaddress: fa:16:3e:9b:59:97
+      mtu: 1442
+      set-name: ens3
+    ens4:
+      addresses:
+        - 172.16.1.1/16
+      match:
+        macaddress: fa:16:3e:0e:6d:f5
+      mtu: 1442
+      nameservers:
+        addresses:
+          - 172.22.0.1
+        search: []
+      set-name: ens4
+  bridges:
+    br-intra:
+      addresses:
+        - 192.168.0.1/24
+      mtu: 1442
+      dhcp4: false
+      dhcp6: false
+      nameservers:
+        addresses:
+          - 172.22.0.1
+
+
+```
+Una vez añadido, aplico los cambios:
+
+```
+andy@luffy:~$ sudo netplan generate 
+```
+Esta acción nos dará lo siguiente por panatalla:
+
+```
+andy@luffy:~$ sudo netplan generate 
+
+** (generate:3341): WARNING **: 11:15:08.664: Permissions for /etc/netplan/50-cloud-init.yaml are too open. Netplan configuration should NOT be accessible by others.
+```
+```
+andy@luffy:~$ sudo netplan apply 
+```
+Esta acción nos dará lo siguiente por panatalla:
+```
+andy@luffy:~$ sudo netplan apply 
+
+** (generate:3348): WARNING **: 11:15:12.005: Permissions for /etc/netplan/50-cloud-init.yaml are too open. Netplan configuration should NOT be accessible by others.
+Cannot call openvswitch: ovsdb-server.service is not running.
+
+** (process:3346): WARNING **: 11:15:12.518: Permissions for /etc/netplan/50-cloud-init.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (process:3346): WARNING **: 11:15:12.641: Permissions for /etc/netplan/50-cloud-init.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+** (process:3346): WARNING **: 11:15:12.641: Permissions for /etc/netplan/50-cloud-init.yaml are too open. Netplan configuration should NOT be accessible by others.
+
+```
+- Instala LXC y crea dos contenedores con la distribución *Ubuntu 22.04*. Estos contenedores serán la **máquina3 (nami)** y la **máquina4 (sanji)**
+
+  - Para la instalación de LXC ejecutaremos lo siguiente:
+
+```
+andy@luffy:~$ sudo apt install lxc -y
+```
+
+Una vez instalado, pasaremos a instalarlo contenedmores:
+
+  - ***Nami***
+
+```
+andy@luffy:~$ sudo lxc-create -n nami -t ubuntu -- -r jammy
+```
+
+  - ***Sanji***
+
+```
+andy@luffy:~$ sudo lxc-create -n sanji -t ubuntu -- -r jammy
+```
+
+  - Configuración de forma permanente la regla ***SNAT*** para que lso contenedores tengan acceso a internet.
+
+Para ello vamos a añadir la siguiente regla:
+
+```
+andy@luffy:~$ sudo iptables -t nat -A POSTROUTING -s 192.168.0.0/24 -o ens3 -j MASQUERADE
+```
+
+Vamos a hacer las reglas persistente, de la siguiente manera:
+
+```
+andy@luffy:~$ sudo -i
+root@luffy:~# iptables-save > /etc/ip
+iproute2/ iptables/ 
+root@luffy:~# iptables-save > /etc/iptables/rules.v4
+root@luffy:~# exit
+logout
+```
+
+  - Conecta los contenedores al bridge br-intra y configúralo de forma estática con las siguientes direcciones: ***máquina3 (nami)*** la ```192.168.0.2``` y ***máquina4 (sanji)*** la ```192.168.0.3```. Su DNS será el ```172.22.0.1```.
+Para la configuracion de red lo que haresmos será modificar el sigueinte fichero ```/var/lib/lxc/nombrecontenedor/config```, por lo que tendra la siguiente forma:
+
+```
+andy@luffy:~$ sudo cat /var/lib/lxc/nami/config
+# Template used to create this container: /usr/share/lxc/templates/lxc-ubuntu
+# Parameters passed to the template: -r jammy
+# For additional config options, please look at lxc.container.conf(5)
+
+# Uncomment the following line to support nesting containers:
+#lxc.include = /usr/share/lxc/config/nesting.conf
+# (Be aware this has security implications)
+
+
+# Common configuration
+lxc.include = /usr/share/lxc/config/ubuntu.common.conf
+
+# Container specific configuration
+lxc.apparmor.profile = generated
+lxc.apparmor.allow_nesting = 1
+lxc.rootfs.path = dir:/var/lib/lxc/nami/rootfs
+lxc.uts.name = nami
+lxc.arch = amd64
+
+# Network configuration
+lxc.net.0.type = veth
+lxc.net.0.hwaddr = 00:16:3e:0d:ff:62
+lxc.net.0.link = br-intra
+lxc.net.0.flags = up
+lxc.net.0.ipv4.address = 192.168.0.2/24
+lxc.net.0.ipv4.gateway = 192.168.0.1
+```
+
+Los DNS debemos configurarlos dentro del contenedor, para ello:Los DNS debemos configurarlos dentro del contenedor, para ello:
+
+  1. Arrancamos ***nami***
+
+```
+andy@luffy:~$ sudo lxc-start -n nami -d
+```
+  2. Entramos en ***Nami*** 
+
+```
+andy@luffy:~$ sudo lxc-attach -n nami
+```
+
+Y ahora configuramos los DNS dentro del contenedor:
+
+```
+root@nami:/# rm /etc/resolv.conf
+root@nami:/# echo -e "nameserver 172.22.0.1\nnameserver 8.8.8.8" > /etc/resolv.conf
+root@nami:/# cat /etc/resolv.conf 
+nameserver 172.22.0.1
+nameserver 8.8.8.8
+```
+
+Y en ***Sanji*** haremos lo mismo, que hicimos en ***Nami***:
+
+```
+andy@luffy:~$ sudo cat /var/lib/lxc/sanji/config
+# Template used to create this container: /usr/share/lxc/templates/lxc-ubuntu
+# Parameters passed to the template: -r jammy
+# For additional config options, please look at lxc.container.conf(5)
+
+# Uncomment the following line to support nesting containers:
+#lxc.include = /usr/share/lxc/config/nesting.conf
+# (Be aware this has security implications)
+
+
+# Common configuration
+lxc.include = /usr/share/lxc/config/ubuntu.common.conf
+
+# Container specific configuration
+lxc.apparmor.profile = generated
+lxc.apparmor.allow_nesting = 1
+lxc.rootfs.path = dir:/var/lib/lxc/sanji/rootfs
+lxc.uts.name = sanji
+lxc.arch = amd64
+
+# Network configuration
+lxc.net.0.type = veth
+lxc.net.0.hwaddr = 00:16:3e:a5:28:b9
+lxc.net.0.link = br-intra
+lxc.net.0.flags = up
+lxc.net.0.ipv4.address = 192.168.0.3/24
+lxc.net.0.ipv4.gateway = 192.168.0.1
+```
+
+Y antes de acceder loq ue aremos es iniciar los contenedores:
+
+```
+andy@luffy:~$ sudo lxc-start nami
+andy@luffy:~$ sudo lxc-start sanji
+```
+
+Y como podemos ver ya estan corriendo:
+
+```
+andy@luffy:~$ sudo lxc-ls --fancy
+NAME  STATE   AUTOSTART GROUPS IPV4        IPV6 UNPRIVILEGED 
+nami  RUNNING 0         -      192.168.0.2 -    false        
+sanji RUNNING 0         -      192.168.0.3 -    false       
+```
+
+  - Para que la red de OpenStack funcione de forma adecuada las imágenes que usamos tienen configurado la mtu (Unidad máxima de transferencia) a 1442 bytes. Tenemos que adecuar los contenedores a este tamaño de trama. Para ello introduce en la configuración de los contenedores la línea: ```lxc.net.0.mtu = 1442```.
+
+Por lo que vamos a tenermo que modifcar el fichero config de ambos contenedores en donde añadiremos la siguiente linea:
+
+```
+lxc.net.0.mtu = 1442
+```
+
+Y para aplicar los cambios apagamos y encenderemos los contenedores:
+
+```
+andy@luffy:~$ sudo lxc-stop -n nami
+andy@luffy:~$ sudo lxc-start -n nami
+```
+
+```
+andy@luffy:~$ sudo lxc-stop -n sanji
+andy@luffy:~$ sudo lxc-start -n sanji
+```
+
+  - Configuración de los contenedores para que se auto inicien al reiniciar la instancia.
+
+Para ello añadimos en el archivo config mencionado anteriormente la siguiente línea:
+
+```
+lxc.start.auto = 1
+```
+
+  - Los contenedores tendran caracterisiticas parecidas a las instancias anteriores:
+
+    - Debes actualizar los paquetes de la distribución instalada.
+
+```
+root@nami:/# apt update
+```
+
+```
+root@sanji:/# apt update
+```
+
+  - El dominio utilizado será del tipo tunombre.gonzalonazareno.org. Por lo tanto configura de manera adecuada el hostname y el FQDN.
+
+- ***SANJI***
+
+```
+root@sanji:/# cat /etc/hosts
+127.0.0.1   localhost
+127.0.1.1   sanji.andy.gonzalonazareno.org sanji
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+```
+Comprobamos:
+
+```
+root@sanji:/# hostname
+sanji
+root@sanji:/# hostname -f
+sanji.andy.gonzalonazareno.org
+```
+
+- ***NAMI***
+
+```
+root@nami:/# cat /etc/hosts
+127.0.0.1   localhost
+127.0.1.1   nami.andy.gonzalonazareno.org nami
+
+# The following lines are desirable for IPv6 capable hosts
+::1     ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+```
+
+Comprobamos:
+
+```
+root@nami:/# hostname
+nami
+root@nami:/# hostname -f
+nami.andy.gonzalonazareno.org
+root@nami:/# 
+```
+
+- Para acceder a los contenedores vamos a usar ssh.
+
+- Crea dos usuarios
+
+  - Un usuario sin privilegios. Se puede llamar como quieras (el nombre de usuario que usaste en las instancias) y accederás a los contenedores usando tu clave ssh privada.
+
+```
+root@nami:/# useradd -m -s /bin/bash andy
+```
+
+```
+root@sanji:/# useradd -m -s /bin/bash andy
+```
+
+Luego, en ambos contenedores añadimos nuestra clave pública dentro del ```authorized_keys```:
+
+```
+root@nami:/# su - andy
+andy@nami:~$ mkdir -p /home/andy/.ssh
+andy@nami:~$ echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC00lFf6Jyj2o41CRmIrIvguHHYKfaByakRVvyoVjfTyZDxDA5PIsAW0JHAKW9V2+MMREjAeY74LiDMJlyc1XHSkEFmzrKXLQ9d8M81WV9vYh2aOB3yHWZq3/CwxpHgcgatlTRKaP310y4mfsbkdbuDAcgE7jwO0k6KlibpUSIet2bUXZ3zagrMNhmDrHErYh+ARW37cm2+OqQdv1l+GeOBlFCTC6yAsOdpbJ5VQ0fWwvR6bl5DUpGBr0RDWE7HQLHGt3WE2nNKCii+myzGc17kU1ERfi7C2aI80VWdQMPqwLUpam/TdNahvw1tZ3lkrjSHVS330Ll7T+uT8WXU4dHEgtlgSNEHszxrQoQcAv+KYzkzi7oMi42xEpdW378WeKcEHgcaKK+gIqR1UHBI8cfOYiduMbnqcySaSEs3YIAk3MaBtSBn4GkkMFWaYNzUK2Ic5MQIOZ/ZkQyzDYLfpVcf6i42bHTLkJvR1mNSDYiL6M3xAp76ws/3ETx0OcdiAf0= madandy@toyota-hilux > /home/andy/.ssh/authorized_keys
+andy@nami:~$ chown -R andy:andy /home/andy/.ssh/
+andy@nami:~$ chmod 700 /home/andy/.ssh/
+andy@nami:~$ chmod 700 /home/andy/.ssh/authorized_keys 
+
+```
+Modificamos también el fichero ****/etc/sudoers**** para que no pida contraseña a mi usuario andy:
+
+```
+# User privilege specification
+root    ALL=(ALL:ALL) ALL
+andy   ALL=(ALL) NOPASSWD:ALL
+```
+
+  - Un usuario ```profesor```, que puede usar ```sudo``` sin contreaseña. Copia de las claves públicas de todos los profesores en los contenedores para que puedan acceder con el usuario ```profesor```
+
+Por lo que tendremos que meter en cada uno de los contenedores:
+
+```
+root@nami:/home/andy# useradd -m -s /bin/bash profesor
+```
+
+```
+root@sanji:/# useradd -m -s /bin/bash profesor
+```
+
+Y ahora metemos la clave publica de JoseDon en el ```.ssh/authorized_keys```:
+
+```
+root@nami:/home/andy# 
+echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCmjoVIoZCx4QFXvljqozXGqxxlSvO7V2aizqyPgMfGqnyl0J9YXo6zrcWYwyWMnMdRdwYZgHqfiiFCUn2QDm6ZuzC4Lcx0K3ZwO2lgL4XaATykVLneHR1ib6RNroFcClN69cxWsdwQW6dpjpiBDXf8m6/qxVP3EHwUTsP8XaOV7WkcCAqfYAMvpWLISqYme6e+6ZGJUIPkDTxavu5JTagDLwY+py1WB53eoDWsG99gmvyit2O1Eo+jRWN+mgRHIxJTrFtLS6o4iWeshPZ6LvCZ/Pum12Oj4B4bjGSHzrKjHZgTwhVJ/LDq3v71/PP4zaI3gVB9ZalemSxqomgbTlnT jose@debian > /home/andy/.ssh/authorized_keys
+
+```
+
+```
+root@sanji:/# 
+echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCmjoVIoZCx4QFXvljqozXGqxxlSvO7V2aizqyPgMfGqnyl0J9YXo6zrcWYwyWMnMdRdwYZgHqfiiFCUn2QDm6ZuzC4Lcx0K3ZwO2lgL4XaATykVLneHR1ib6RNroFcClN69cxWsdwQW6dpjpiBDXf8m6/qxVP3EHwUTsP8XaOV7WkcCAqfYAMvpWLISqYme6e+6ZGJUIPkDTxavu5JTagDLwY+py1WB53eoDWsG99gmvyit2O1Eo+jRWN+mgRHIxJTrFtLS6o4iWeshPZ6LvCZ/Pum12Oj4B4bjGSHzrKjHZgTwhVJ/LDq3v71/PP4zaI3gVB9ZalemSxqomgbTlnT jose@debian > /home/andy/.ssh/authorized_keys
+
+```
+
+  - Cambia la contraseña al usuario *root*
+
+```
+root@nami:/home/andy# passwd root
+New password: 
+Retype new password: 
+passwd: password updated successfully
+```
+
+```
+root@sanji:/# passwd root
+New password: 
+Retype new password: 
+passwd: password updated successfully
+```
+
+Ya está todo configurado, solo nos quedaría crear los accesos por ssh, para ello en el fichero ````~/.ssh/config```` añadimos lo siguiente:
+
+```
+madandy@toyota-hilux:~$ 
+cat .ssh/config 
+Host vps
+  HostName 217.160.226.33
+  User root
+  ForwardAgent yes
+
+
+Host luffy
+  HostName 172.22.200.6
+  User andy
+  ForwardAgent yes
+
+Host zoro
+  HostName 172.16.0.200
+  User andy
+  ForwardAgent yes
+  ProxyJump luffy
+
+Host nami
+  HostName 192.168.0.2
+  User andy
+  ForwardAgent yes
+  ProxyJump luffy
+
+Host sanji
+  HostName 192.168.0.3
+  User andy
+  ForwardAgent yes
+  ProxyJump luffy
+
+```
+
+```
+madandy@toyota-hilux:~$ 
+ssh nami
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-28-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+andy@nami:~$ 
+
+```
+
+```
+madandy@toyota-hilux:~$ 
+ssh sanji
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-28-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+The programs included with the Ubuntu system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Ubuntu comes with ABSOLUTELY NO WARRANTY, to the extent permitted by
+applicable law.
+
+andy@sanji:~$ 
+
+```
+
+Otras comprobaciones que vamos a realizar:
+
+1. La salida del comando sudo lxc-ls -f
+
+```
+andy@luffy:~$ sudo lxc-ls -f
+NAME  STATE   AUTOSTART GROUPS IPV4        IPV6 UNPRIVILEGED 
+nami  RUNNING 0         -      192.168.0.2 -    false        
+sanji RUNNING 0         -      192.168.0.3 -    false     
+```
+
+2. Prueba de funcionamiento de que los contenedores tienen acceso a internet accediendo a un nombre de dominio, para comprobar que funciona el DNS.
+```
+andy@sanji:~$ ping -c 4 google.es
+PING google.es (142.250.185.131) 56(84) bytes of data.
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=1 ttl=99 time=49.3 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=2 ttl=99 time=39.4 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=3 ttl=99 time=37.4 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=4 ttl=99 time=38.6 ms
+
+--- google.es ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3006ms
+rtt min/avg/max/mdev = 37.445/41.203/49.337/4.746 ms
+
+```
+
+```
+andy@nami:~$ ping -c 4 google.es
+PING google.es (142.250.185.131) 56(84) bytes of data.
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=1 ttl=99 time=39.7 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=2 ttl=99 time=39.5 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=3 ttl=99 time=37.2 ms
+64 bytes from fra16s50-in-f3.1e100.net (142.250.185.131): icmp_seq=4 ttl=99 time=37.5 ms
+
+--- google.es ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 37.179/38.487/39.738/1.154 ms
+
+```
+
+Ahora vamos a reiniciar el escenario y comprobamos qu eeste funcionando despues de reiniciar ***luffy***
+
+```
+andy@luffy:~$ sudo reboot
+
+Broadcast message from root@luffy on pts/1 (Mon 2024-12-16 14:50:23 UTC):
+
+The system will reboot now!
+
+madandy@toyota-hilux:~/Documentos/SegundoASIR/github/Servicios/uNIDAD4-openstack/practica5$ 
+ssh nami
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-28-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Mon Dec 16 14:46:06 2024 from 192.168.0.1
+andy@nami:~$ 
+
+
+andy@nami:~$ 
+logout
+Connection to 192.168.0.2 closed.
+madandy@toyota-hilux:~/Documentos/SegundoASIR/github/Servicios/uNIDAD4-openstack/practica5$ 
+ssh sanji
+Welcome to Ubuntu 22.04.5 LTS (GNU/Linux 6.1.0-28-amd64 x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Mon Dec 16 14:47:49 2024 from 192.168.0.1
+andy@sanji:~$ 
+
+```
