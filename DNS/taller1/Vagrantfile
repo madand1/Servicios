@@ -1,0 +1,39 @@
+Vagrant.configure("2") do |config|
+  # Definimos la máquina virtual dns1
+  config.vm.define "dns1" do |dns1|
+    dns1.vm.hostname = "dns1.andres.org"
+    dns1.vm.box = "debian/bookworm64"
+    dns1.vm.network "private_network", ip: "172.22.200.100"
+
+    dns1.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get upgrade -y
+      echo "172.22.200.100 dns1.andres.org dns1" >> /etc/hosts
+      echo "dns1.andres.org" > /etc/hostname
+      hostnamectl set-hostname dns1.andres.org
+      apt-get install -y bind9 bind9utils bind9-doc
+      systemctl enable bind9
+      systemctl start bind9
+      hostname -f
+    SHELL
+  end
+
+  # Definimos la máquina virtual dns2 (servidor esclavo)
+  config.vm.define "dns2" do |dns2|
+    dns2.vm.hostname = "dns2.andres.org"
+    dns2.vm.box = "debian/bookworm64"
+    dns2.vm.network "private_network", ip: "172.22.200.101"
+
+    dns2.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get upgrade -y
+      echo "172.22.200.101 dns2.andres.org dns2" >> /etc/hosts
+      echo "dns2.andres.org" > /etc/hostname
+      hostnamectl set-hostname dns2.andres.org
+      apt-get install -y bind9 bind9utils bind9-doc
+      systemctl enable bind9
+      systemctl start bind9
+      hostname -f
+    SHELL
+  end
+end
