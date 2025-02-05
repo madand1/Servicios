@@ -1,0 +1,22 @@
+Vagrant.configure("2") do |config|
+  config.vm.define "dns_informatica" do |dns|
+    dns.vm.box = "debian/bullseye64"  
+    
+    # Configuración de red privada
+    dns.vm.network "private_network", type: "static", ip: "172.22.200.120"
+
+    # Nombre de host de la máquina virtual
+    dns.vm.hostname = "dns.informatica.andres.org"
+    
+    # Configuración del proveedor (VirtualBox)
+    dns.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024"  # Asignamos 1GB de memoria
+    end
+
+    # Provisionamiento para instalar Bind9
+    dns.vm.provision "shell", inline: <<-SHELL
+      sudo apt-get update
+      sudo apt-get install -y bind9 bind9utils bind9-doc
+    SHELL
+  end
+end

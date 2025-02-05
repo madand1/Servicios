@@ -2,7 +2,7 @@
 package_update: true
 package_upgrade: true
 hostname: zoro
-fqdn: zoro.pablo.gonzalonazareno.org
+fqdn: zoro.andy.gonzalonazareno.org
 users:
   - name: andy
     gecos: Usuario sin privilegios

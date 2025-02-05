@@ -1,0 +1,60 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "debian/bullseye64"
+  config.vm.hostname = "dns2.andres.org"
+
+  config.vm.network "private_network", ip: "172.22.200.110"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # Actualizar paquetes e instalar Bind9
+    apt update && apt upgrade -y
+    apt install -y bind9 dnsutils
+
+    # Configurar opciones de Bind9
+    cat <<EOF > /etc/bind/named.conf.options
+options {
+    directory "/var/cache/bind";
+    allow-query { any; };
+    recursion no;
+    allow-transfer { none; }; # Seguridad: No se permiten transferencias no autorizadas
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+    dnssec-validation auto;
+};
+EOF
+
+    # Configurar zonas esclavas
+    cat <<EOF > /etc/bind/named.conf.local
+include "/etc/bind/zones.rfc1918";
+
+zone "andres.org" {
+    type slave;
+    file "/var/cache/bind/db.andres.org";
+    masters { 172.22.200.100; }; # Dirección del maestro
+};
+
+zone "22.172.in-addr.arpa" {
+    type slave;
+    file "/var/cache/bind/db.172.22.0.0";
+    masters { 172.22.200.100; }; # Dirección del maestro
+};
+EOF
+
+    # Crear directorios y asegurar permisos
+    mkdir -p /var/cache/bind
+    chown -R bind:bind /var/cache/bind
+
+    # Configuración de firewall para permitir transferencias de zona
+    ufw allow 53
+    ufw allow 22/tcp
+    ufw enable
+
+    # Reiniciar Bind9 para aplicar la configuración
+    systemctl restart bind9
+    systemctl enable bind9
+
+    # Validar configuración
+    named-checkconf || exit 1
+  SHELL
+end

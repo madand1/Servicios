@@ -1,0 +1,16 @@
+1. tienes hecho el cloud-init.yaml
+2. Te dejo por comandos lo que tienes que ejecutar:
+
+openstack server create franky \
+  --flavor vol.medium \
+  --image "Debian 12 Bookworm" \
+  --network "Red Intra de andy" \
+  --network "Red DMZ de andy" \
+  --user-data cloud-init-franky.yaml  \
+  --boot-from-volume 15 \
+  --security-group default
+
+3. Ves las ip flotantes que hay: openstack floating ip list
+
+4. Le asignas la ip flotante que quieras: openstack server add floating ip franky ip-flotante
+

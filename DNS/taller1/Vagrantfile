@@ -1,39 +1,82 @@
 Vagrant.configure("2") do |config|
-  # Definimos la máquina virtual dns1
-  config.vm.define "dns1" do |dns1|
-    dns1.vm.hostname = "dns1.andres.org"
-    dns1.vm.box = "debian/bookworm64"
-    dns1.vm.network "private_network", ip: "172.22.200.100"
+  config.vm.box = "debian/bullseye64"
+  config.vm.hostname = "dns1.andres.org"
 
-    dns1.vm.provision "shell", inline: <<-SHELL
-      apt-get update
-      apt-get upgrade -y
-      echo "172.22.200.100 dns1.andres.org dns1" >> /etc/hosts
-      echo "dns1.andres.org" > /etc/hostname
-      hostnamectl set-hostname dns1.andres.org
-      apt-get install -y bind9 bind9utils bind9-doc
-      systemctl enable bind9
-      systemctl start bind9
-      hostname -f
-    SHELL
-  end
+  config.vm.network "private_network", ip: "172.22.200.100"
 
-  # Definimos la máquina virtual dns2 (servidor esclavo)
-  config.vm.define "dns2" do |dns2|
-    dns2.vm.hostname = "dns2.andres.org"
-    dns2.vm.box = "debian/bookworm64"
-    dns2.vm.network "private_network", ip: "172.22.200.101"
+  config.vm.provision "shell", inline: <<-SHELL
+    apt update && apt upgrade -y
+    apt install -y bind9 dnsutils
+    echo 'OPTIONS="-4 -f -u bind"' > /etc/default/named
+    cat <<EOF > /etc/bind/named.conf.options
+options {
+    directory "/var/cache/bind";
+    allow-query { 172.201.0.0/16; 172.22.0.0/16; };
+    dnssec-validation no;
+    listen-on { 172.22.200.100; };
+    forwarders {
+        8.8.8.8;
+        8.8.4.4;
+    };
+};
+EOF
 
-    dns2.vm.provision "shell", inline: <<-SHELL
-      apt-get update
-      apt-get upgrade -y
-      echo "172.22.200.101 dns2.andres.org dns2" >> /etc/hosts
-      echo "dns2.andres.org" > /etc/hostname
-      hostnamectl set-hostname dns2.andres.org
-      apt-get install -y bind9 bind9utils bind9-doc
-      systemctl enable bind9
-      systemctl start bind9
-      hostname -f
-    SHELL
-  end
+    cat <<EOF > /etc/bind/named.conf.local
+zone "andres.org" {
+    type master;
+    file "/var/cache/bind/db.andres.org";
+};
+
+zone "22.172.in-addr.arpa" {
+    type master;
+    file "/var/cache/bind/db.172.22.0.0";
+};
+EOF
+
+    mkdir -p /var/cache/bind
+
+    cat <<EOF > /var/cache/bind/db.andres.org
+$TTL    86400
+@       IN      SOA     dns1.andres.org. root.andres.org. (
+                              1         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+;
+@       IN      NS      dns1.andres.org.
+@       IN      MX      10      correo.andres.org.
+
+$ORIGIN andres.org.
+
+dns1            IN      A       172.22.200.100
+correo          IN      A       172.22.200.101
+asterix         IN      A       172.22.200.102
+obelix          IN      A       172.22.200.103
+www             IN      CNAME   asterix
+informatica     IN      CNAME   asterix
+ftp             IN      CNAME   obelix
+EOF
+
+    cat <<EOF > /var/cache/bind/db.172.22.0.0
+$TTL    86400
+@       IN      SOA     dns1.andres.org. root.andres.org. (
+                              1         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                          86400 )       ; Negative Cache TTL
+;
+@       IN      NS      dns1.andres.org.
+
+$ORIGIN 22.172.in-addr.arpa.
+
+100.200         IN      PTR     dns1.andres.org.
+101.200         IN      PTR     correo.andres.org.
+102.200         IN      PTR     asterix.andres.org.
+103.200         IN      PTR     obelix.andres.org.
+EOF
+
+    systemctl restart bind9
+  SHELL
 end

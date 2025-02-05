@@ -2,10 +2,9 @@
 package_update: true
 package_upgrade: true
 
-hostname: luffy
-fqdn: luffy.andy.gonzalonazareno.org
+hostname: maquina
+fqdn: maquina.andres.gonzalonazareno.org
 manage_etc_hosts: true
-# Creacioon de dos usuarios, configuración por sudo y la clave pública ssh 
 
 users:
   - name: andy
